@@ -1,0 +1,33 @@
+# Compiled object files
+*.o
+*.obj
+
+# Compiled binary
+main
+main.exe
+*.out
+*.exe
+
+# Debug files
+*.dSYM/
+*.stackdump
+
+# Build artifacts
+*.a
+*.so
+*.dll
+*.lib
+
+# Logs
+*.log
+
+# Editor/IDE files
+.vscode/
+.idea/
+*.swp
+*~
+
+# MacOS / Linux system files
+.DS_Store
+Thumbs.db
+
