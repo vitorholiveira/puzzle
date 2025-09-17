@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
 
     int len_list_numbers = argc - 2;
     if(((len_list_numbers % 9) != 0 ) && (((len_list_numbers % 16) != 0))){
-        std::cerr << "[ERROR] -> " << "You should pass an state of a 8-puzzle or 15-puzzle" << std::endl;
+        std::cerr << "[ERROR] -> " << "You should pass a state of a 8-puzzle or 15-puzzle" << std::endl;
         std::cerr << "[ERROR] -> " << "The list should have a multiple of 9 or a multiple of 16 elements" << std::endl;
         std::cerr << "[ERROR] -> " << usage_msg << std::endl;
     }
