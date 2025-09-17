@@ -1,7 +1,3 @@
-#include <stdio.h>
-#include <iostream>
-#include <vector>
-#include <string>
 #include "puzzle.hpp"
 
 std::vector<std::vector<int>> read_states(int argc, char* argv[]) {

@@ -23,7 +23,7 @@ struct Puzzle {
 class PuzzleSolver {
 public:
 
-    // static dfs_eight
+    // static bfs_eight
 
     // static idfs_eight
 
