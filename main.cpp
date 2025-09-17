@@ -1,15 +1,17 @@
 #include "puzzle.hpp"
 
-std::vector<std::vector<int>> read_states(int argc, char* argv[]) {
-    std::vector<std::vector<int>> states;
-    std::vector<int> first_vector;
+std::vector<std::vector<std::bitset<NUM_BITS>>> read_states(int argc, char* argv[]) {
+    std::vector<std::vector<std::bitset<NUM_BITS>>> states;
+    std::vector<std::bitset<NUM_BITS>> first_vector;
+    first_vector.reserve(16);
     states.push_back(first_vector);
     int state_index = 0;
     std::cout << "Puzzle state " << state_index + 1 << ": ";
     for(int i = 2; i < argc; i++) {
         std::string v = std::string(argv[i]);
         if(v.length() > 1 && (v[1] == ',' || v[2] == ',')){
-            std::vector<int> curr_vector;
+            std::vector<std::bitset<NUM_BITS>> curr_vector;
+            curr_vector.reserve(16);
             states.push_back(curr_vector);
             v = (v[1] == ',') ? v.substr(0,1) : v.substr(0,2);
             states[state_index].push_back(stoi(v));
@@ -48,7 +50,7 @@ int main(int argc, char* argv[]) {
     }
 
     
-    std::vector<std::vector<int>> states = read_states(argc, argv);
+    std::vector<std::vector<std::bitset<NUM_BITS>>> states = read_states(argc, argv);
     Puzzle puzzle = Puzzle(states);
 
     if(algorithm == BFS && puzzle.type == EIGHT) {
