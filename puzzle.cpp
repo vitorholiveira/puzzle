@@ -5,9 +5,6 @@
 */
 template<size_t BITS_GRID>
 std::bitset<BITS_GRID> Puzzle<BITS_GRID>::create_goal_state() const {
-    constexpr bool is_8_puzzle = (BITS_GRID == BITS_GRID_8);
-    constexpr int max_pos = is_8_puzzle ? 8 : 15;
-
     std::bitset<BITS_GRID> goal;
 
     for (int pos = 0; pos < max_pos; ++pos) {
@@ -30,9 +27,6 @@ template<size_t BITS_GRID>
 std::bitset<BITS_GRID> Puzzle<BITS_GRID>::vector_to_bitset(const std::vector<int>& grid_vec) const {
     std::bitset<BITS_GRID> result;
 
-    constexpr bool is_8_puzzle = (BITS_GRID == BITS_GRID_8);
-    constexpr int max_pos = is_8_puzzle ? 8 : 15;
-
     for (int i = 0; i <= max_pos; ++i) {
         for (int bit = 0; bit < TILE_BITS; ++bit) { // fixed <= to <
             if (grid_vec[i] & (1 << bit)) {
@@ -46,10 +40,6 @@ std::bitset<BITS_GRID> Puzzle<BITS_GRID>::vector_to_bitset(const std::vector<int
 template<size_t BITS_GRID>
 std::vector<std::bitset<BITS_GRID>> Puzzle<BITS_GRID>::expand(const std::bitset<BITS_GRID>& grid) const {
     std::vector<std::bitset<BITS_GRID>> children;
-
-    constexpr bool is_8_puzzle = (BITS_GRID == BITS_GRID_8);
-    constexpr int max_pos = is_8_puzzle ? 8 : 15;
-    constexpr int grid_size = is_8_puzzle ? 3 : 4;
 
     // Find blank (value = 0)
     int blank_pos = -1;

@@ -25,8 +25,11 @@ class Puzzle {
 public:
     explicit Puzzle(const std::vector<std::vector<int>>& initial_states)
         : states(initial_states), 
-          GOAL_PUZZLE(create_goal_state()) 
-    {}
+          GOAL_PUZZLE(create_goal_state()) {
+        bool is_8_puzzle = (BITS_GRID == BITS_GRID_8);
+        max_pos = is_8_puzzle ? 8 : 15;
+        grid_size = is_8_puzzle ? 3 : 4;
+    }
 
     // --- Solvers (generic across puzzle sizes) ---
     bool solve_bfs();
@@ -36,6 +39,8 @@ public:
     bool solve_gbfs();
 
 private:
+    int max_pos;
+    int grid_size;
     std::vector<std::vector<int>> states;
     std::bitset<BITS_GRID> GOAL_PUZZLE;
 
