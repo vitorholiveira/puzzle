@@ -1,8 +1,14 @@
 #include "puzzle.hpp"
 
-std::vector<std::vector<std::bitset<NUM_BITS>>> read_states(int argc, char* argv[]) {
-    std::vector<std::vector<std::bitset<NUM_BITS>>> states;
-    std::vector<std::bitset<NUM_BITS>> first_vector;
+#define BFS "-bfs"
+#define IDFS "-idfs"
+#define ASTAR "-astar"
+#define IDASTAR "idastar"
+#define GBFS "-gbfs"
+
+std::vector<std::vector<int>> read_states(int argc, char* argv[]) {
+    std::vector<std::vector<int>> states;
+    std::vector<int> first_vector;
     first_vector.reserve(16);
     states.push_back(first_vector);
     int state_index = 0;
@@ -10,7 +16,7 @@ std::vector<std::vector<std::bitset<NUM_BITS>>> read_states(int argc, char* argv
     for(int i = 2; i < argc; i++) {
         std::string v = std::string(argv[i]);
         if(v.length() > 1 && (v[1] == ',' || v[2] == ',')){
-            std::vector<std::bitset<NUM_BITS>> curr_vector;
+            std::vector<int> curr_vector;
             curr_vector.reserve(16);
             states.push_back(curr_vector);
             v = (v[1] == ',') ? v.substr(0,1) : v.substr(0,2);
@@ -50,23 +56,28 @@ int main(int argc, char* argv[]) {
     }
 
     
-    std::vector<std::vector<std::bitset<NUM_BITS>>> states = read_states(argc, argv);
-    Puzzle puzzle = Puzzle(states);
-
-    if(algorithm == BFS && puzzle.type == EIGHT) {
-        // TODO
-    } else if (algorithm == IDFS && puzzle.type == EIGHT) {
-        // TODO
-    } else if (algorithm == ASTAR && puzzle.type == EIGHT) {
-        // TODO
-    } else if (algorithm == IDASTAR && puzzle.type == EIGHT) {
-        // TODO
-    } else if (algorithm == GBFS && puzzle.type == EIGHT) {
-        // TODO
-    } else if (algorithm == ASTAR && puzzle.type == FIFTEEN) {
-        // TODO
+    std::vector<std::vector<int>> states = read_states(argc, argv);
+    int type = states[0].size() - 1;
+    if(type == 8) {
+        Puzzle<BITS_GRID_8> puzzle(states);
+        if(algorithm == BFS) {
+            // TODO puzzle.solve_bfs();
+        } else if (algorithm == IDFS) {
+            // TODO puzzle.solve_idfs();
+        } else if (algorithm == ASTAR) {
+            // TODO puzzle.solve_astar();
+        } else if (algorithm == IDASTAR) {
+            // TODO puzzle.solve_iastar();
+        } else if (algorithm == GBFS) {
+            // TODO puzzle.solve_gbfs();
+        }
+    } else if(type == 15) {
+        Puzzle<BITS_GRID_15> puzzle(states);
+        if (algorithm == ASTAR) {
+            // TODO puzzle.solve_astar();
+        }
     } else {
-        std::cerr << "[ERROR] -> " << "There is no implementation to solve the " << puzzle.type << "-puzzle with the " << algorithm << " algorithm." << std::endl;
+        std::cerr << "[ERROR] -> " << "There is no implementation to solve the " << type << "-puzzle with the " << algorithm << " algorithm." << std::endl;
     }
     return 0;
 }
