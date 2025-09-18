@@ -98,18 +98,50 @@ std::vector<std::bitset<BITS_GRID>> Puzzle<BITS_GRID>::expand(const std::bitset<
 }
 
 /*
-    PUBLIC METHODS (example: BFS)
+    PUBLIC METHODS (PUZZLE SOLVERS)
 */
 template<size_t BITS_GRID>
 bool Puzzle<BITS_GRID>::solve_bfs() {
+    // Setup nodes
     std::unordered_set<std::bitset<BITS_GRID>> visited;
-
     for (const auto& state : states) {
         auto bits = vector_to_bitset(state);
         visited.insert(bits);
     }
 
     // TODO: implement actual BFS search using expand()
+    return false;
+}
+
+template<size_t BITS_GRID>
+bool Puzzle<BITS_GRID>::solve_idfs() {
+    // TODO: Setup nodes
+
+    // TODO: implement actual IDFS search using expand()
+    return false;
+}
+
+template<size_t BITS_GRID>
+bool Puzzle<BITS_GRID>::solve_astar() {
+    // TODO: Setup nodes
+
+    // TODO: implement actual ASTAR search using expand()
+    return false;
+}
+
+template<size_t BITS_GRID>
+bool Puzzle<BITS_GRID>::solve_iastar() {
+    // TODO: Setup nodes
+
+    // TODO: implement actual IASTAR search using expand()
+    return false;
+}
+
+template<size_t BITS_GRID>
+bool Puzzle<BITS_GRID>::solve_gbfs() {
+    // TODO: Setup nodes
+
+    // TODO: implement actual GBFS search using expand()
     return false;
 }
 
