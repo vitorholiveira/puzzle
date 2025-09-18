@@ -31,7 +31,6 @@ public:
         grid_size = is_8_puzzle ? 3 : 4;
     }
 
-    // --- Solvers (generic across puzzle sizes) ---
     bool solve_bfs();
     bool solve_idfs();
     bool solve_astar();
@@ -44,7 +43,6 @@ private:
     std::vector<std::vector<int>> states;
     std::bitset<BITS_GRID> GOAL_PUZZLE;
 
-    // --- Helpers ---
     std::bitset<BITS_GRID> create_goal_state() const;
     std::bitset<BITS_GRID> vector_to_bitset(const std::vector<int>& grid_vec) const;
 

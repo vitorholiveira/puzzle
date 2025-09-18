@@ -28,7 +28,7 @@ std::bitset<BITS_GRID> Puzzle<BITS_GRID>::vector_to_bitset(const std::vector<int
     std::bitset<BITS_GRID> result;
 
     for (int i = 0; i <= max_pos; ++i) {
-        for (int bit = 0; bit < TILE_BITS; ++bit) { // fixed <= to <
+        for (int bit = 0; bit < TILE_BITS; ++bit) {
             if (grid_vec[i] & (1 << bit)) {
                 result.set(i * TILE_BITS + bit);
             }
