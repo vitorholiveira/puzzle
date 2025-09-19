@@ -7,8 +7,8 @@ template<size_t BITS_GRID>
 std::bitset<BITS_GRID> Puzzle<BITS_GRID>::create_goal_state() const {
     std::bitset<BITS_GRID> goal;
 
-    for (int pos = 0; pos < max_pos; pos++) {
-        int value = pos + 1;
+    for (int pos = 0; pos <= max_pos; pos++) {
+        int value = pos;
         for (int bit = 0; bit < TILE_BITS; bit++) {
             if (value & (1 << bit)) {
                 goal.set(pos * TILE_BITS + bit);
@@ -89,11 +89,11 @@ std::vector<std::bitset<BITS_GRID>> Puzzle<BITS_GRID>::expand(const std::bitset<
     int row = blank_pos / grid_size;
     int col = blank_pos % grid_size;
 
-    // Up, Down, Left, Right moves
-    std::vector<int> moves = {-grid_size, grid_size, -1, 1};
+    // Up, Left, Right, Down moves
+    std::vector<int> moves = {-grid_size, -1, 1, grid_size};
     std::vector<bool> valid_moves = {
-        (row > 0), (row < grid_size - 1),
-        (col > 0), (col < grid_size - 1)
+        (row > 0), (col > 0),
+        (col < grid_size - 1), (row < grid_size - 1)
     };
 
     for (int i = 0; i < 4; ++i) {
@@ -151,20 +151,20 @@ bool Puzzle<BITS_GRID>::solve_bfs() {
 
         visited.insert(current);
 
-        // Chegou no objetivo?
-        if (current == goal) {
-            std::cout << "Solução encontrada com BFS!" << std::endl;
-            std::cout << "Número de nós expandidos: " << n_expanded << std::endl;
-            return true;
-        }
-
         // Expande vizinhos
+        n_expanded++;
         for (auto& child : expand(current)) {
+            std::cout << "Expanding to:\n";
+            print_state(child);
+
+            if (child == goal) {
+                std::cout << "Solução encontrada com BFS!" << std::endl;
+                std::cout << "Número de nós expandidos: " << n_expanded << std::endl;
+                return true;
+            }
+
             if (child != current && visited.find(child) == visited.end()) {
-                std::cout << "Expanding to:\n";
-                print_state(child);
                 frontier.push(child);
-                n_expanded++;
             }
         }
     }
