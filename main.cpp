@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
     if(type == 8) {
         Puzzle<BITS_GRID_8> puzzle(states);
         if(algorithm == BFS) {
-            // TODO puzzle.solve_bfs();
+            puzzle.solve_bfs();
         } else if (algorithm == IDFS) {
             // TODO puzzle.solve_idfs();
         } else if (algorithm == ASTAR) {

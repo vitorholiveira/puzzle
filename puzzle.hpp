@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <bitset>
 #include <unordered_set>
+#include <queue>
 
 constexpr int TILE_BITS = 4;
 
@@ -24,8 +25,7 @@ template <size_t BITS_GRID>
 class Puzzle {
 public:
     explicit Puzzle(const std::vector<std::vector<int>>& initial_states)
-        : states(initial_states), 
-          GOAL_PUZZLE(create_goal_state()) {
+        : states(initial_states) {
         bool is_8_puzzle = (BITS_GRID == BITS_GRID_8);
         max_pos = is_8_puzzle ? 8 : 15;
         grid_size = is_8_puzzle ? 3 : 4;
@@ -41,10 +41,11 @@ private:
     int max_pos;
     int grid_size;
     std::vector<std::vector<int>> states;
-    std::bitset<BITS_GRID> GOAL_PUZZLE;
 
     std::bitset<BITS_GRID> create_goal_state() const;
     std::bitset<BITS_GRID> vector_to_bitset(const std::vector<int>& grid_vec) const;
+    std::vector<int> bitset_to_vector(const std::bitset<BITS_GRID>& grid) const;
+    void print_state(const std::bitset<BITS_GRID>& grid) const;
 
     std::vector<std::bitset<BITS_GRID>> expand(const std::bitset<BITS_GRID>& grid) const;
 };
