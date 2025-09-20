@@ -84,19 +84,23 @@ std::vector<u_int64_t> Puzzle<BITS_GRID>::expand(const u_int64_t& grid) const {
 
 // ERROR
 template<size_t BITS_GRID>
-inline u_int16_t Puzzle<BITS_GRID>::manhattan_distance(const u_int64_t& state) {
-    int total = 0;
-    for (u_int8_t pos = 0; pos < max_pos + 1; ++pos) {
-        u_int8_t tile = (state >> (pos * TILE_BITS)) & 0xF;  // extract 4 bits
+u_int16_t Puzzle<BITS_GRID>::manhattan_distance(const u_int64_t& state) const {
+    u_int16_t total = 0;
+    int pos;
+    for (pos = 0; pos < max_pos + 1; ++pos) {
+        int tile = (state >> (pos * TILE_BITS)) & 0xF;  // extract 4 bits
         if (tile == 0) continue; // skip blank
 
-        u_int8_t cur_row  = pos / grid_size;
-        u_int8_t cur_col  = pos % grid_size;
-        u_int8_t goal_row = tile / grid_size;
-        u_int8_t goal_col = tile % grid_size;
+        int cur_row  = pos / grid_size;
+        int cur_col  = pos % grid_size;
+        int goal_row = tile / grid_size;
+        int goal_col = tile % grid_size;
 
-        total += std::abs(cur_row - goal_row) + std::abs(cur_col - goal_col);
+
+        total += static_cast<u_int16_t>(std::abs(cur_row - goal_row) + std::abs(cur_col - goal_col));
+        //std::cout << std::endl << "tile: " << static_cast<int>(tile) << " pos: " << static_cast<int>(pos) << " h = " << std::abs(cur_row - goal_row) + std::abs(cur_col - goal_col) << std::endl;
     }
+    //std::cout << "total: " << total << " pos: " << pos << std::endl;
     return total;
 }
 
@@ -182,8 +186,10 @@ bool Puzzle<BITS_GRID>::solve_iastar() {
 
 template<size_t BITS_GRID>
 bool Puzzle<BITS_GRID>::solve_gbfs() {
-    // A map to store states we've seen and their path length.
-    std::unordered_map<u_int64_t, u_int32_t> expansion_counts;
+    // A map to store states we've seen and a pair:
+    // - First element is the path length;
+    // - Second element is the sum of all heuristic value.
+    std::unordered_map<u_int64_t, std::pair<u_int32_t, u_int64_t>> expansion_counts;
 
     // Use a min-priority queue to store states to explore.
     // The pair stores <heuristic_value, state_representation>
@@ -197,13 +203,10 @@ bool Puzzle<BITS_GRID>::solve_gbfs() {
     u_int64_t start = vector_to_state(states[0]);
     u_int64_t goal  = create_goal_state();
 
-    // The heuristic value for the start state
     u_int16_t start_heuristic = manhattan_distance(start);
-    u_int64_t heuristic_sum = start_heuristic;
 
-    // Add the starting state to the frontier.
     frontier.push({start_heuristic, start});
-    expansion_counts[start] = 0;
+    expansion_counts[start] = {0, static_cast<u_int64_t>(start_heuristic)};
 
     auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -211,42 +214,37 @@ bool Puzzle<BITS_GRID>::solve_gbfs() {
         // Get the state with the lowest heuristic value (the "best" one).
         // The 'top()' method returns a reference to the top element.
         u_int64_t current = frontier.top().second;
+        u_int16_t current_heuristic = frontier.top().first;
+
         // Then, remove it from the frontier.
         frontier.pop();
 
+        std::cout << "==> Exploring node:\n";
+        print_state(current);
+        std::cout << "heuristic value: " << static_cast<int>(current_heuristic) << std::endl << std::endl;
+
         // If we've already expanded this state, skip it to avoid redundant work.
-        if (expansion_counts.find(current) != expansion_counts.end() && expansion_counts[current] < n_expanded) {
+        if (expansion_counts.find(current) != expansion_counts.end() && expansion_counts[current].first < n_expanded) {
             continue;
         }
-
+        
         n_expanded++;
-
-        // If we found the goal, we're done.
-        if (current == goal) {
-            auto end_time = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-            double seconds = duration.count() / 1'000'000.0;
-
-            std::cout << "Solução encontrada com GBFS!" << std::endl;
-            std::cout << "Número de nós expandidos: " << n_expanded << std::endl;
-            std::cout << "Comprimento solução (não garantida como ótima): " << expansion_counts[current] << std::endl;
-            std::cout << "Tempo para a solução: " << seconds << "s" << std::endl;
-            std::cout << "Valor inicial da heurística: " << start_heuristic << std::endl;
-            std::cout << "Valor médio da heurística: " << heuristic_sum / n_expanded << std::endl;
-            return true;
-        }
 
         // Expand neighbors
         for (u_int64_t child : expand(current)) {
             // Check if we've seen this child before.
             if (expansion_counts.find(child) != expansion_counts.end()) continue; 
 
+            std::cout << "Expanding to:\n";
+            print_state(child);
+            u_int16_t h = manhattan_distance(child);
+            std::cout << "heuristic value: " << static_cast<int>(h) << std::endl << std::endl;
+
             // If not, calculate its heuristic and add to the frontier.
             u_int16_t child_heuristic = manhattan_distance(child);
-            heuristic_sum += child_heuristic;
             frontier.push({child_heuristic, child});
-            expansion_counts[child] = expansion_counts[current] + 1;
-            // If we found the goal, we're done.
+            expansion_counts[child] = {expansion_counts[current].first + 1, expansion_counts[current].second + static_cast<u_int64_t>(child_heuristic)};
+
             if (child == goal) {
                 auto end_time = std::chrono::high_resolution_clock::now();
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
@@ -254,10 +252,10 @@ bool Puzzle<BITS_GRID>::solve_gbfs() {
 
                 std::cout << "Solução encontrada com GBFS!" << std::endl;
                 std::cout << "Número de nós expandidos: " << n_expanded << std::endl;
-                std::cout << "Comprimento solução (não garantida como ótima): " << expansion_counts[current] << std::endl;
+                std::cout << "Comprimento solução (não garantida como ótima): " << expansion_counts[current].first << std::endl;
                 std::cout << "Tempo para a solução: " << seconds << "s" << std::endl;
                 std::cout << "Valor inicial da heurística: " << start_heuristic << std::endl;
-                std::cout << "Valor médio da heurística: " << float(heuristic_sum) / float(n_expanded) << std::endl;
+                std::cout << "Valor médio da heurística: " << float(expansion_counts[current].second) / expansion_counts[current].first << std::endl;
                 return true;
             }
         }
