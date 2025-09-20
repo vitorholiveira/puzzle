@@ -69,7 +69,7 @@ int main(int argc, char* argv[]) {
         } else if (algorithm == IDASTAR) {
             // TODO puzzle.solve_iastar();
         } else if (algorithm == GBFS) {
-            // TODO puzzle.solve_gbfs();
+            puzzle.solve_gbfs();
         }
     } else if(type == 15) {
         Puzzle<BITS_GRID_15> puzzle(states);

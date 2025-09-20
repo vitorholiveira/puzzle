@@ -82,13 +82,12 @@ std::vector<u_int64_t> Puzzle<BITS_GRID>::expand(const u_int64_t& grid) const {
     return children;
 }
 
+// ERROR
 template<size_t BITS_GRID>
-inline int Puzzle<BITS_GRID>::manhattan_distance(const std::bitset<BITS_GRID>& state) {
-    u_int64_t raw = state.to_ullong();  // works because 36 <= 64
+inline u_int16_t Puzzle<BITS_GRID>::manhattan_distance(const u_int64_t& state) {
     int total = 0;
-
     for (u_int8_t pos = 0; pos < max_pos; ++pos) {
-        u_int8_t tile = (raw >> (pos * TILE_BITS)) & 0xF;  // extract 4 bits
+        u_int8_t tile = (state >> (pos * TILE_BITS)) & 0xF;  // extract 4 bits
         if (tile == 0) continue; // skip blank
 
         u_int8_t cur_row  = pos / grid_size;
@@ -183,9 +182,88 @@ bool Puzzle<BITS_GRID>::solve_iastar() {
 
 template<size_t BITS_GRID>
 bool Puzzle<BITS_GRID>::solve_gbfs() {
-    // TODO: Setup nodes
+    // A map to store states we've seen and their path length.
+    std::unordered_map<u_int64_t, u_int32_t> expansion_counts;
 
-    // TODO: implement actual GBFS search using expand()
+    // Use a min-priority queue to store states to explore.
+    // The pair stores <heuristic_value, state_representation>
+    // std::greater<std::pair<u_int32_t, u_int64_t>> makes it a min-heap based on the first element (the heuristic).
+    std::priority_queue<std::pair<u_int16_t, u_int64_t>,
+                        std::vector<std::pair<u_int16_t, u_int64_t>>,
+                        std::greater<std::pair<u_int16_t, u_int64_t>>> frontier;
+
+    u_int32_t n_expanded = 0;
+
+    u_int64_t start = vector_to_state(states[0]);
+    u_int64_t goal  = create_goal_state();
+
+    // The heuristic value for the start state
+    u_int16_t start_heuristic = manhattan_distance(start);
+    u_int64_t heuristic_sum = start_heuristic;
+
+    // Add the starting state to the frontier.
+    frontier.push({start_heuristic, start});
+    expansion_counts[start] = 0;
+
+    auto start_time = std::chrono::high_resolution_clock::now();
+
+    while (!frontier.empty()) {
+        // Get the state with the lowest heuristic value (the "best" one).
+        // The 'top()' method returns a reference to the top element.
+        u_int64_t current = frontier.top().second;
+        // Then, remove it from the frontier.
+        frontier.pop();
+
+        // If we've already expanded this state, skip it to avoid redundant work.
+        if (expansion_counts.find(current) != expansion_counts.end() && expansion_counts[current] < n_expanded) {
+            continue;
+        }
+
+        n_expanded++;
+
+        // If we found the goal, we're done.
+        if (current == goal) {
+            auto end_time = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+            double seconds = duration.count() / 1'000'000.0;
+
+            std::cout << "Solução encontrada com GBFS!" << std::endl;
+            std::cout << "Número de nós expandidos: " << n_expanded << std::endl;
+            std::cout << "Comprimento solução (não garantida como ótima): " << expansion_counts[current] << std::endl;
+            std::cout << "Tempo para a solução: " << seconds << "s" << std::endl;
+            std::cout << "Valor inicial da heurística: " << start_heuristic << std::endl;
+            std::cout << "Valor médio da heurística: " << heuristic_sum / n_expanded << std::endl;
+            return true;
+        }
+
+        // Expand neighbors
+        for (u_int64_t child : expand(current)) {
+            // Check if we've seen this child before.
+            if (expansion_counts.find(child) != expansion_counts.end()) continue; 
+
+            // If not, calculate its heuristic and add to the frontier.
+            u_int16_t child_heuristic = manhattan_distance(child);
+            heuristic_sum += child_heuristic;
+            frontier.push({child_heuristic, child});
+            expansion_counts[child] = expansion_counts[current] + 1;
+            // If we found the goal, we're done.
+            if (child == goal) {
+                auto end_time = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+                double seconds = duration.count() / 1'000'000.0;
+
+                std::cout << "Solução encontrada com GBFS!" << std::endl;
+                std::cout << "Número de nós expandidos: " << n_expanded << std::endl;
+                std::cout << "Comprimento solução (não garantida como ótima): " << expansion_counts[current] << std::endl;
+                std::cout << "Tempo para a solução: " << seconds << "s" << std::endl;
+                std::cout << "Valor inicial da heurística: " << start_heuristic << std::endl;
+                std::cout << "Valor médio da heurística: " << float(heuristic_sum) / float(n_expanded) << std::endl;
+                return true;
+            }
+        }
+    }
+
+    std::cout << "Nenhuma solução encontrada.\n";
     return false;
 }
 

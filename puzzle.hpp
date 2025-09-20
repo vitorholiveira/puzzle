@@ -9,6 +9,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <queue>
+#include <functional>
 #include <chrono>
 
 constexpr int TILE_BITS = 4;
@@ -43,7 +44,7 @@ private:
     int max_pos;
     int grid_size;
     std::vector<std::vector<int>> states;
-    inline int manhattan_distance(const std::bitset<BITS_GRID>& state);
+    inline u_int16_t manhattan_distance(const u_int64_t& state);
 
     u_int64_t create_goal_state() const;
     u_int64_t vector_to_state(const std::vector<int>& grid_vec) const;
