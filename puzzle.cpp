@@ -130,8 +130,8 @@ std::vector<std::bitset<BITS_GRID>> Puzzle<BITS_GRID>::expand(const std::bitset<
 */
 template<size_t BITS_GRID>
 bool Puzzle<BITS_GRID>::solve_bfs() {
-    // Setup nodes
     std::unordered_set<std::bitset<BITS_GRID>> visited;
+    std::unordered_map<std::bitset<BITS_GRID>, int> expansion_counts;
     std::queue<std::bitset<BITS_GRID>> frontier;
     int n_expanded = 0;
 
@@ -139,7 +139,9 @@ bool Puzzle<BITS_GRID>::solve_bfs() {
     auto goal = create_goal_state();
 
     frontier.push(start);
+    expansion_counts[goal] = 0;
 
+    auto start_time = std::chrono::high_resolution_clock::now();
     while (!frontier.empty()) {
         auto current = frontier.front();
         frontier.pop();
@@ -147,20 +149,27 @@ bool Puzzle<BITS_GRID>::solve_bfs() {
         if (visited.find(current) != visited.end()) {
             continue;
         }
-        std::cout << "Exploring node:\n";
-        print_state(current);
+
+        //std::cout << "Exploring node:\n";
+        //print_state(current);
 
         visited.insert(current);
 
-        // Expande vizinhos
+        // Expand neighbors
         n_expanded++;
         for (auto& child : expand(current)) {
-            std::cout << "Expanding to:\n";
-            print_state(child);
+            //std::cout << "Expanding to:\n";
+            //print_state(child);
+            expansion_counts[child] = expansion_counts[current] + 1;
 
             if (child == goal) {
                 std::cout << "Solução encontrada com BFS!" << std::endl;
                 std::cout << "Número de nós expandidos: " << n_expanded << std::endl;
+                std::cout << "Comprimento solução ótima: " << expansion_counts[child] << std::endl;
+                auto end_time = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::microseconds>(start_time - end_time);
+                double seconds = duration.count() / 1'000'000.0;
+                std::cout << "Tempo para a solução: " << seconds << std::endl;
                 return true;
             }
 
