@@ -13,6 +13,12 @@
 #include <chrono>
 #include <stack>
 
+#define BFS "-bfs"
+#define IDFS "-idfs"
+#define ASTAR "-astar"
+#define IDASTAR "idastar"
+#define GBFS "-gbfs"
+
 constexpr int TILE_BITS = 4;
 
 constexpr size_t BITS_GRID_8 = 36;   // 9 tiles * 4 bits
@@ -35,15 +41,19 @@ public:
         grid_size = is_8_puzzle ? 3 : 4;
     }
 
-    bool solve_bfs();
-    bool solve_idfs();
-    bool solve_astar();
-    bool solve_iastar();
-    bool solve_gbfs();
+    void solve(const std::string& algorithm);
 
 private:
+    bool solve_bfs(const u_int64_t& start) const;
+    bool solve_idfs(const u_int64_t& start) const;
+    bool solve_astar(const u_int64_t& start) const;
+    bool solve_iastar(const u_int64_t& start) const;
+    bool solve_gbfs(const u_int64_t& start) const;
+
     int max_pos;
     int grid_size;
+    u_int64_t goal;
+
     std::vector<std::vector<int>> states;
     u_int16_t manhattan_distance(const u_int64_t& state) const;
 

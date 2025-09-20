@@ -2,6 +2,26 @@
 
 // OK
 template<size_t BITS_GRID>
+void Puzzle<BITS_GRID>::solve(const std::string& algorithm) {
+    goal = create_goal_state();
+    for(const auto& state : states) {
+        if(state.size() != max_pos + 1) continue;
+        u_int64_t start = vector_to_state(state);
+        if(algorithm == BFS) {
+            solve_bfs(start);
+        } else if (algorithm == IDFS) {
+            solve_idfs(start);
+        } else if (algorithm == ASTAR) {
+            solve_astar(start);
+        } else if (algorithm == IDASTAR) {
+            solve_iastar(start);
+        } else if (algorithm == GBFS) {
+            solve_gbfs(start);
+        }
+    }
+}
+
+template<size_t BITS_GRID>
 u_int64_t Puzzle<BITS_GRID>::vector_to_state(const std::vector<int>& v) const {
     u_int64_t state = 0;
     for (size_t pos = 0; pos < v.size(); ++pos) {
@@ -108,13 +128,10 @@ u_int16_t Puzzle<BITS_GRID>::manhattan_distance(const u_int64_t& state) const {
     PUBLIC METHODS (PUZZLE SOLVERS)
 */
 template<size_t BITS_GRID>
-bool Puzzle<BITS_GRID>::solve_bfs() {
+bool Puzzle<BITS_GRID>::solve_bfs(const u_int64_t& start) const {
     std::unordered_map<u_int64_t, u_int32_t> expansion_counts;
     std::queue<u_int64_t> frontier;
     u_int32_t n_expanded = 0;
-
-    u_int64_t start = vector_to_state(states[0]);
-    u_int64_t goal  = create_goal_state();
 
     frontier.push(start);
     expansion_counts[start] = 0;
@@ -169,9 +186,7 @@ bool Puzzle<BITS_GRID>::solve_bfs() {
 }
 
 template<size_t BITS_GRID>
-bool Puzzle<BITS_GRID>::solve_idfs() {
-    u_int64_t start = vector_to_state(states[0]);
-    u_int64_t goal  = create_goal_state();
+bool Puzzle<BITS_GRID>::solve_idfs(const u_int64_t& start) const {
     int n_expanded = 0;
 
     auto start_time = std::chrono::high_resolution_clock::now();
@@ -254,23 +269,23 @@ bool Puzzle<BITS_GRID>::solve_idfs() {
 }
 
 template<size_t BITS_GRID>
-bool Puzzle<BITS_GRID>::solve_astar() {
+bool Puzzle<BITS_GRID>::solve_astar(const u_int64_t& start) const{
     // TODO: Setup nodes
-
+    std::cout << start << std::endl;
     // TODO: implement actual ASTAR search using expand()
     return false;
 }
 
 template<size_t BITS_GRID>
-bool Puzzle<BITS_GRID>::solve_iastar() {
+bool Puzzle<BITS_GRID>::solve_iastar(const u_int64_t& start) const{
     // TODO: Setup nodes
-
+    std::cout << start << std::endl;
     // TODO: implement actual IASTAR search using expand()
     return false;
 }
 
 template<size_t BITS_GRID>
-bool Puzzle<BITS_GRID>::solve_gbfs() {
+bool Puzzle<BITS_GRID>::solve_gbfs(const u_int64_t& start) const{
     // A map to store states we've seen and a pair:
     // - First element is the path length;
     // - Second element is the sum of all heuristic value.
@@ -284,9 +299,6 @@ bool Puzzle<BITS_GRID>::solve_gbfs() {
                         std::greater<std::pair<u_int16_t, u_int64_t>>> frontier;
 
     u_int32_t n_expanded = 0;
-
-    u_int64_t start = vector_to_state(states[0]);
-    u_int64_t goal  = create_goal_state();
 
     u_int16_t start_heuristic = manhattan_distance(start);
 

@@ -1,11 +1,5 @@
 #include "puzzle.hpp"
 
-#define BFS "-bfs"
-#define IDFS "-idfs"
-#define ASTAR "-astar"
-#define IDASTAR "idastar"
-#define GBFS "-gbfs"
-
 std::vector<std::vector<int>> read_states(int argc, char* argv[]) {
     std::vector<std::vector<int>> states;
     std::vector<int> first_vector;
@@ -60,21 +54,11 @@ int main(int argc, char* argv[]) {
     int type = states[0].size() - 1;
     if(type == 8) {
         Puzzle<BITS_GRID_8> puzzle(states);
-        if(algorithm == BFS) {
-            puzzle.solve_bfs();
-        } else if (algorithm == IDFS) {
-            puzzle.solve_idfs();
-        } else if (algorithm == ASTAR) {
-            puzzle.solve_astar();
-        } else if (algorithm == IDASTAR) {
-            puzzle.solve_iastar();
-        } else if (algorithm == GBFS) {
-            puzzle.solve_gbfs();
-        }
+        puzzle.solve(algorithm);
     } else if(type == 15) {
         Puzzle<BITS_GRID_15> puzzle(states);
         if (algorithm == ASTAR) {
-            puzzle.solve_astar();
+            puzzle.solve(algorithm);
         }
     } else {
         std::cerr << "[ERROR] -> " << "There is no implementation to solve the " << type << "-puzzle with the " << algorithm << " algorithm." << std::endl;
