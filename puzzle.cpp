@@ -86,7 +86,7 @@ std::vector<u_int64_t> Puzzle<BITS_GRID>::expand(const u_int64_t& grid) const {
 template<size_t BITS_GRID>
 inline u_int16_t Puzzle<BITS_GRID>::manhattan_distance(const u_int64_t& state) {
     int total = 0;
-    for (u_int8_t pos = 0; pos < max_pos; ++pos) {
+    for (u_int8_t pos = 0; pos < max_pos + 1; ++pos) {
         u_int8_t tile = (state >> (pos * TILE_BITS)) & 0xF;  // extract 4 bits
         if (tile == 0) continue; // skip blank
 
