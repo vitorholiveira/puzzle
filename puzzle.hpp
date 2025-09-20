@@ -11,6 +11,7 @@
 #include <queue>
 #include <functional>
 #include <chrono>
+#include <stack>
 
 constexpr int TILE_BITS = 4;
 
@@ -50,7 +51,9 @@ private:
     u_int64_t vector_to_state(const std::vector<int>& grid_vec) const;
     void print_state(const u_int64_t& state) const;
 
-    std::vector<u_int64_t> expand(const u_int64_t& grid) const;
+    std::vector<u_int64_t> expand(const u_int64_t& state) const;
+
+
 };
 
 #endif // PUZZLE_HPP

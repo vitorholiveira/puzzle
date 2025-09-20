@@ -63,18 +63,18 @@ int main(int argc, char* argv[]) {
         if(algorithm == BFS) {
             puzzle.solve_bfs();
         } else if (algorithm == IDFS) {
-            // TODO puzzle.solve_idfs();
+            puzzle.solve_idfs();
         } else if (algorithm == ASTAR) {
-            // TODO puzzle.solve_astar();
+            puzzle.solve_astar();
         } else if (algorithm == IDASTAR) {
-            // TODO puzzle.solve_iastar();
+            puzzle.solve_iastar();
         } else if (algorithm == GBFS) {
             puzzle.solve_gbfs();
         }
     } else if(type == 15) {
         Puzzle<BITS_GRID_15> puzzle(states);
         if (algorithm == ASTAR) {
-            // TODO puzzle.solve_astar();
+            puzzle.solve_astar();
         }
     } else {
         std::cerr << "[ERROR] -> " << "There is no implementation to solve the " << type << "-puzzle with the " << algorithm << " algorithm." << std::endl;

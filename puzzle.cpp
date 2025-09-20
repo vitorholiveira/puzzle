@@ -34,12 +34,12 @@ void Puzzle<BITS_GRID>::print_state(const u_int64_t& state) const {
 }
 
 template<size_t BITS_GRID>
-std::vector<u_int64_t> Puzzle<BITS_GRID>::expand(const u_int64_t& grid) const {
+std::vector<u_int64_t> Puzzle<BITS_GRID>::expand(const u_int64_t& state) const {
     std::vector<u_int64_t> children;
 
     int blank_pos = -1;
     for (u_int8_t pos = 0; pos < max_pos + 1; ++pos) {
-        if (((grid >> (pos * 4)) & 0xF) == 0) {
+        if (((state >> (pos * 4)) & 0xF) == 0) {
             blank_pos = pos;
             break;
         }
@@ -62,22 +62,22 @@ std::vector<u_int64_t> Puzzle<BITS_GRID>::expand(const u_int64_t& grid) const {
         if (!valid_moves[i]) continue;
         int new_pos = blank_pos + moves[i];
         
-        u_int64_t new_grid = grid;
+        u_int64_t new_state = state;
         
         // Extract tile to be moved
-        u_int64_t tile_value = (grid >> (new_pos * 4)) & 0xF;
+        u_int64_t tile_value = (state >> (new_pos * 4)) & 0xF;
         
         // Clear both the new tile position and the blank's old position
         u_int64_t mask = ~(
             (static_cast<u_int64_t>(0xF) << (new_pos * 4)) |
             (static_cast<u_int64_t>(0xF) << (blank_pos * 4))
         );
-        new_grid &= mask;
+        new_state &= mask;
         
         // Place the tile in the blank's old position
-        new_grid |= tile_value << (blank_pos * 4);
+        new_state |= tile_value << (blank_pos * 4);
         
-        children.push_back(new_grid);
+        children.push_back(new_state);
     }
     return children;
 }
@@ -121,6 +121,16 @@ bool Puzzle<BITS_GRID>::solve_bfs() {
 
     auto start_time = std::chrono::high_resolution_clock::now();
 
+    if (start == goal) {
+        auto end_time = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+        double seconds = duration.count() / 1'000'000.0;
+
+        std::cout << "Solution found with BFS:" << std::endl;
+        std::cout << n_expanded << "," << expansion_counts[start] << "," << seconds << "," << 0 << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
+        return true;
+    }
+
     while (!frontier.empty()) {
         u_int64_t current = frontier.front();
         frontier.pop();
@@ -145,10 +155,8 @@ bool Puzzle<BITS_GRID>::solve_bfs() {
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
                 double seconds = duration.count() / 1'000'000.0;
 
-                std::cout << "Solução encontrada com BFS!\n";
-                std::cout << "Número de nós expandidos: " << n_expanded << "\n";
-                std::cout << "Comprimento solução ótima: " << expansion_counts[child] << "\n";
-                std::cout << "Tempo para a solução: " << seconds << "s\n";
+                std::cout << "Solution found with BFS:" << std::endl;
+                std::cout << n_expanded << "," << expansion_counts[child] << "," << seconds << "," << 0 << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
                 return true;
             }
 
@@ -162,9 +170,86 @@ bool Puzzle<BITS_GRID>::solve_bfs() {
 
 template<size_t BITS_GRID>
 bool Puzzle<BITS_GRID>::solve_idfs() {
-    // TODO: Setup nodes
+    u_int64_t start = vector_to_state(states[0]);
+    u_int64_t goal  = create_goal_state();
+    int n_expanded = 0;
 
-    // TODO: implement actual IDFS search using expand()
+    auto start_time = std::chrono::high_resolution_clock::now();
+
+    int depth_limit = 0;
+    // The main IDFS loop: iterate through increasing depth limits.
+    while (true) {
+        depth_limit++;
+        // The stack stores pairs of {state, current_depth}
+        std::stack<std::pair<u_int64_t, int>> frontier;
+        // Map to store parent-child relationships for path reconstruction.
+        std::unordered_map<u_int64_t, u_int64_t> parent_map;
+        // Map to track the shallowest depth a node was visited at in this DLS run.
+        // This prevents cycles and redundant exploration within one iteration.
+        std::unordered_map<u_int64_t, int> visited_depth;
+
+        frontier.push({start, 0});
+        visited_depth[start] = 0;
+        
+        bool solution_found_this_iteration = false;
+
+        while (!frontier.empty()) {
+            auto [current, depth] = frontier.top();
+            frontier.pop();
+            n_expanded++;
+
+
+            // Goal check
+            if (current == goal) {
+                solution_found_this_iteration = true;
+                break; // Exit the while loop
+            }
+
+            // If at the depth limit, do not expand this node.
+            if (depth >= depth_limit) {
+                continue;
+            }
+
+            // Expand neighbors (children)
+            // This is optional but ensures consistency.
+            for (u_int64_t& child : expand(current)) {
+                int new_depth = depth + 1;
+                // If we haven't seen this child before, or if we found a shorter path to it,
+                // add it to the frontier.
+                if (visited_depth.find(child) == visited_depth.end() || visited_depth[child] > new_depth) {
+                    visited_depth[child] = new_depth;
+                    parent_map[child] = current;
+                    frontier.push({child, new_depth});
+                }
+            }
+        }
+        // Iterative DLS Ends
+
+        if (solution_found_this_iteration) {
+            auto end_time = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+            double seconds = duration.count() / 1'000'000.0;
+
+            // Reconstruct the path from the parent map
+            std::vector<u_int64_t> path;
+            u_int64_t path_node = goal;
+            // The check 'path_node != start' handles the case where start == goal
+            while (parent_map.count(path_node) && path_node != start) {
+                path.push_back(path_node);
+                path_node = parent_map[path_node];
+            }
+            path.push_back(start);
+            std::reverse(path.begin(), path.end());
+
+            std::cout << "Solution found with IDFS:" << std::endl;
+            std::cout << n_expanded << "," << path.size() << "," << seconds << "," << 0 << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
+
+            return true;
+        }
+    }
+
+    // This part is generally unreachable if a solution exists.
+    std::cout << "No solution found.\n";
     return false;
 }
 
@@ -250,12 +335,8 @@ bool Puzzle<BITS_GRID>::solve_gbfs() {
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
                 double seconds = duration.count() / 1'000'000.0;
 
-                std::cout << "Solução encontrada com GBFS!" << std::endl;
-                std::cout << "Número de nós expandidos: " << n_expanded << std::endl;
-                std::cout << "Comprimento solução (não garantida como ótima): " << expansion_counts[current].first << std::endl;
-                std::cout << "Tempo para a solução: " << seconds << "s" << std::endl;
-                std::cout << "Valor inicial da heurística: " << start_heuristic << std::endl;
-                std::cout << "Valor médio da heurística: " << float(expansion_counts[current].second) / expansion_counts[current].first << std::endl;
+                std::cout << "Solution found with GBFS:" << std::endl;
+                std::cout << n_expanded << "," << expansion_counts[current].first << "," << seconds << "," <<float(expansion_counts[current].second) / expansion_counts[current].first << "," << start_heuristic << std::endl;
                 return true;
             }
         }
