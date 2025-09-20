@@ -21,6 +21,10 @@ void Puzzle<BITS_GRID>::solve(const std::string& algorithm) {
     }
 }
 
+/*
+    UTILS
+*/
+
 template<size_t BITS_GRID>
 u_int64_t Puzzle<BITS_GRID>::vector_to_state(const std::vector<int>& v) const {
     u_int64_t state = 0;
@@ -102,7 +106,6 @@ std::vector<u_int64_t> Puzzle<BITS_GRID>::expand(const u_int64_t& state) const {
     return children;
 }
 
-// ERROR
 template<size_t BITS_GRID>
 u_int16_t Puzzle<BITS_GRID>::manhattan_distance(const u_int64_t& state) const {
     u_int16_t total = 0;
@@ -125,7 +128,7 @@ u_int16_t Puzzle<BITS_GRID>::manhattan_distance(const u_int64_t& state) const {
 }
 
 /*
-    PUBLIC METHODS (PUZZLE SOLVERS)
+    PUZZLE SOLVERS
 */
 template<size_t BITS_GRID>
 bool Puzzle<BITS_GRID>::solve_bfs(const u_int64_t& start) const {
