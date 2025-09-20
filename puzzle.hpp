@@ -43,13 +43,14 @@ private:
     int max_pos;
     int grid_size;
     std::vector<std::vector<int>> states;
+    inline int manhattan_distance(const std::bitset<BITS_GRID>& state);
 
-    std::bitset<BITS_GRID> create_goal_state() const;
-    std::bitset<BITS_GRID> vector_to_bitset(const std::vector<int>& grid_vec) const;
-    std::vector<int> bitset_to_vector(const std::bitset<BITS_GRID>& grid) const;
-    void print_state(const std::bitset<BITS_GRID>& grid) const;
+    u_int64_t create_goal_state() const;
+    u_int64_t vector_to_state(const std::vector<int>& grid_vec) const;
+    std::vector<u_int8_t> state_to_vector(const u_int64_t& state) const;
+    void print_state(const u_int64_t& state) const;
 
-    std::vector<std::bitset<BITS_GRID>> expand(const std::bitset<BITS_GRID>& grid) const;
+    std::vector<u_int64_t> expand(const u_int64_t& grid) const;
 };
 
 #endif // PUZZLE_HPP

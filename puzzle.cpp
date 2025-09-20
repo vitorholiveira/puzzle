@@ -1,61 +1,38 @@
 #include "puzzle.hpp"
-
-/*
-    CREATING GOAL STATES
-*/
 template<size_t BITS_GRID>
-std::bitset<BITS_GRID> Puzzle<BITS_GRID>::create_goal_state() const {
-    std::bitset<BITS_GRID> goal;
-
-    for (int pos = 0; pos <= max_pos; pos++) {
-        int value = pos;
-        for (int bit = 0; bit < TILE_BITS; bit++) {
-            if (value & (1 << bit)) {
-                goal.set(pos * TILE_BITS + bit);
-            }
-        }
+u_int64_t Puzzle<BITS_GRID>::vector_to_state(const std::vector<int>& v) const {
+    u_int64_t state = 0;
+    for (size_t pos = 0; pos < v.size(); ++pos) {
+        u_int64_t tile = static_cast<u_int64_t>(v[pos]) & 0xF; // 4 bits
+        state |= (tile << (pos * 4));
     }
-    // last tile is blank = 0 (already default)
+    return state;
+}
 
+// Goal state: tiles [0,1,2,3,4,5,6,7,8]
+template<size_t BITS_GRID>
+u_int64_t Puzzle<BITS_GRID>::create_goal_state() const {
+    u_int64_t goal = 0;
+    for (u_int8_t pos = 0; pos < max_pos + 1; ++pos) {
+        goal |= (static_cast<u_int64_t>(pos) << (pos * 4));
+    }
     return goal;
 }
 
-/*
-    PRIVATE METHODS
-*/
 template<size_t BITS_GRID>
-std::bitset<BITS_GRID> Puzzle<BITS_GRID>::vector_to_bitset(const std::vector<int>& grid_vec) const {
-    std::bitset<BITS_GRID> result;
+std::vector<u_int8_t> Puzzle<BITS_GRID>::state_to_vector(const u_int64_t& grid) const {
+    std::vector<u_int8_t> result(max_pos + 1, 0);
 
-    for (size_t i = 0; i <= max_pos; i++) {
-        for (int bit = 0; bit < TILE_BITS; bit++) {
-            if (grid_vec[i] & (1 << bit)) {
-                result.set(i * TILE_BITS + bit);
-            }
-        }
+    for (u_int8_t pos = 0; pos < max_pos + 1; ++pos) {
+        result[pos] |= (static_cast<u_int64_t>(grid) & (0xF >> (pos * 4)));
+        std::cout << result[pos] << std::endl;
     }
     return result;
 }
 
 template<size_t BITS_GRID>
-std::vector<int> Puzzle<BITS_GRID>::bitset_to_vector(const std::bitset<BITS_GRID>& grid) const {
-    std::vector<int> result(max_pos + 1, 0);
-
-    for (int i = 0; i < max_pos + 1; ++i) {
-        int value = 0;
-        for (int bit = 0; bit < TILE_BITS; ++bit) {
-            if (grid[i * TILE_BITS + bit]) {
-                value |= (1 << bit);
-            }
-        }
-        result[i] = value;
-    }
-    return result;
-}
-
-template<size_t BITS_GRID>
-void Puzzle<BITS_GRID>::print_state(const std::bitset<BITS_GRID>& grid) const {
-    auto vec = bitset_to_vector(grid);
+void Puzzle<BITS_GRID>::print_state(const u_int64_t& state) const {
+    auto vec = state_to_vector(state);
     for (int i = 0; i < grid_size; ++i) {
         for (int j = 0; j < grid_size; ++j) {
             std::cout << vec[i * grid_size + j] << " ";
@@ -66,28 +43,19 @@ void Puzzle<BITS_GRID>::print_state(const std::bitset<BITS_GRID>& grid) const {
 }
 
 template<size_t BITS_GRID>
-std::vector<std::bitset<BITS_GRID>> Puzzle<BITS_GRID>::expand(const std::bitset<BITS_GRID>& grid) const {
-    std::vector<std::bitset<BITS_GRID>> children;
+std::vector<u_int64_t> Puzzle<BITS_GRID>::expand(const u_int64_t& grid) const {
+    std::vector<u_int64_t> children;
 
     // Find blank (value = 0)
-    int blank_pos = -1;
-    for (int i = 0; i <= max_pos; ++i) {
-        bool is_blank = true;
-        for (int bit = 0; bit < TILE_BITS; ++bit) {
-            if (grid[i * TILE_BITS + bit]) {
-                is_blank = false;
-                break;
-            }
-        }
-        if (is_blank) {
-            blank_pos = i;
-            break;
-        }
+    int blank_pos = -1;    
+    for (u_int8_t pos = 0; pos < max_pos + 1; ++pos) {
+        if((0x0 & ((pos * 4) << grid)) == 0x0)
+            blank_pos = pos;
     }
     if (blank_pos == -1) return children;
 
-    int row = blank_pos / grid_size;
-    int col = blank_pos % grid_size;
+    u_int8_t row = blank_pos / grid_size;
+    u_int8_t col = blank_pos % grid_size;
 
     // Up, Left, Right, Down moves
     std::vector<int> moves = {-grid_size, -1, 1, grid_size};
@@ -101,28 +69,40 @@ std::vector<std::bitset<BITS_GRID>> Puzzle<BITS_GRID>::expand(const std::bitset<
         int new_pos = blank_pos + moves[i];
         if (!(new_pos >= 0 && new_pos <= max_pos)) continue;
 
-        std::bitset<BITS_GRID> new_grid = grid;
+        u_int64_t new_grid = grid;
 
         // Extract tile at new_pos
-        std::bitset<TILE_BITS> tile_value;
-        for (int bit = 0; bit < TILE_BITS; ++bit) {
-            tile_value[bit] = new_grid[new_pos * TILE_BITS + bit];
-        }
+        int tile_pos = moves[i] + blank_pos;
+        u_int64_t tile_value = (grid >> ((tile_pos) * 4)) & 0xF;
 
-        // Clear both positions
-        for (int bit = 0; bit < TILE_BITS; ++bit) {
-            new_grid[blank_pos * TILE_BITS + bit] = 0;
-            new_grid[new_pos * TILE_BITS + bit] = 0;
-        }
-
-        // Place tile in blank position
-        for (int bit = 0; bit < TILE_BITS; ++bit) {
-            new_grid[blank_pos * TILE_BITS + bit] = tile_value[bit];
-        }
-
+        // Clear new tile position
+        new_grid &= ~(static_cast<u_int64_t>(0xF) << (tile_pos * 4));
+    
+        // Place tile in blank position        
+        new_grid |= tile_value << (new_pos * 4);
+        
         children.push_back(new_grid);
     }
     return children;
+}
+
+template<size_t BITS_GRID>
+inline int Puzzle<BITS_GRID>::manhattan_distance(const std::bitset<BITS_GRID>& state) {
+    u_int64_t raw = state.to_ullong();  // works because 36 <= 64
+    int total = 0;
+
+    for (u_int8_t pos = 0; pos < max_pos; ++pos) {
+        u_int8_t tile = (raw >> (pos * TILE_BITS)) & 0xF;  // extract 4 bits
+        if (tile == 0) continue; // skip blank
+
+        u_int8_t cur_row  = pos / grid_size;
+        u_int8_t cur_col  = pos % grid_size;
+        u_int8_t goal_row = tile / grid_size;
+        u_int8_t goal_col = tile % grid_size;
+
+        total += std::abs(cur_row - goal_row) + std::abs(cur_col - goal_col);
+    }
+    return total;
 }
 
 /*
@@ -130,56 +110,54 @@ std::vector<std::bitset<BITS_GRID>> Puzzle<BITS_GRID>::expand(const std::bitset<
 */
 template<size_t BITS_GRID>
 bool Puzzle<BITS_GRID>::solve_bfs() {
-    std::unordered_set<std::bitset<BITS_GRID>> visited;
-    std::unordered_map<std::bitset<BITS_GRID>, int> expansion_counts;
-    std::queue<std::bitset<BITS_GRID>> frontier;
-    int n_expanded = 0;
+    std::unordered_map<unsigned long long, u_int32_t> expansion_counts;
+    std::queue<unsigned long long> frontier;
+    u_int32_t n_expanded = 0;
 
-    auto start = vector_to_bitset(states[0]);
-    auto goal = create_goal_state();
+    u_int64_t start = vector_to_state(states[0]);
+    u_int64_t goal  = create_goal_state();
 
     frontier.push(start);
-    expansion_counts[goal] = 0;
+    expansion_counts[start] = 0;
 
     auto start_time = std::chrono::high_resolution_clock::now();
+
     while (!frontier.empty()) {
-        auto current = frontier.front();
+        u_int64_t current = frontier.front();
         frontier.pop();
 
-        if (visited.find(current) != visited.end()) {
-            continue;
-        }
+        n_expanded++;
 
-        //std::cout << "Exploring node:\n";
-        //print_state(current);
-
-        visited.insert(current);
+        std::cout << "Exploring node:\n";
+        print_state(current);
 
         // Expand neighbors
-        n_expanded++;
-        for (auto& child : expand(current)) {
-            //std::cout << "Expanding to:\n";
-            //print_state(child);
+        for (u_int64_t child : expand(current)) {
+            std::cout << "Expanding to:\n";
+            print_state(child);
+            // If we already saw this child, skip
+            if (expansion_counts.find(child) != expansion_counts.end())
+                continue;
+
             expansion_counts[child] = expansion_counts[current] + 1;
 
             if (child == goal) {
-                std::cout << "Solução encontrada com BFS!" << std::endl;
-                std::cout << "Número de nós expandidos: " << n_expanded << std::endl;
-                std::cout << "Comprimento solução ótima: " << expansion_counts[child] << std::endl;
+                std::cout << "Solução encontrada com BFS!\n";
+                std::cout << "Número de nós expandidos: " << n_expanded << "\n";
+                std::cout << "Comprimento solução ótima: " << expansion_counts[child] << "\n";
+
                 auto end_time = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::microseconds>(start_time - end_time);
+                auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
                 double seconds = duration.count() / 1'000'000.0;
-                std::cout << "Tempo para a solução: " << seconds << std::endl;
+                std::cout << "Tempo para a solução: " << seconds << "s\n";
                 return true;
             }
 
-            if (child != current && visited.find(child) == visited.end()) {
-                frontier.push(child);
-            }
+            frontier.push(child);
         }
     }
 
-    std::cout << "Nenhuma solução encontrada." << std::endl;
+    std::cout << "Nenhuma solução encontrada.\n";
     return false;
 }
 
