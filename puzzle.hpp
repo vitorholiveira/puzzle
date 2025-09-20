@@ -47,7 +47,6 @@ private:
 
     u_int64_t create_goal_state() const;
     u_int64_t vector_to_state(const std::vector<int>& grid_vec) const;
-    std::vector<u_int8_t> state_to_vector(const u_int64_t& state) const;
     void print_state(const u_int64_t& state) const;
 
     std::vector<u_int64_t> expand(const u_int64_t& grid) const;
