@@ -5,7 +5,7 @@ template<size_t BITS_GRID>
 void Puzzle<BITS_GRID>::solve(const std::string& algorithm) {
     goal = create_goal_state();
     for(const auto& state : states) {
-        if(state.size() != max_pos + 1) continue;
+        if(static_cast<int>(state.size()) != max_pos + 1) continue;
         u_int64_t start = vector_to_state(state);
         if(algorithm == BFS) {
             solve_bfs(start);
@@ -197,25 +197,28 @@ bool Puzzle<BITS_GRID>::solve_idfs(const u_int64_t& start) const {
     int depth_limit = 0;
     // The main IDFS loop: iterate through increasing depth limits.
     while (true) {
-        depth_limit++;
         // The stack stores pairs of {state, current_depth}
-        std::stack<std::pair<u_int64_t, int>> frontier;
+        std::stack<std::pair<u_int64_t, u_int16_t>> frontier;
         // Map to store parent-child relationships for path reconstruction.
         std::unordered_map<u_int64_t, u_int64_t> parent_map;
         // Map to track the shallowest depth a node was visited at in this DLS run.
         // This prevents cycles and redundant exploration within one iteration.
-        std::unordered_map<u_int64_t, int> visited_depth;
+        std::unordered_map<u_int64_t, u_int16_t> visited_depth;
 
         frontier.push({start, 0});
         visited_depth[start] = 0;
         
         bool solution_found_this_iteration = false;
+        
 
         while (!frontier.empty()) {
             auto [current, depth] = frontier.top();
-            frontier.pop();
-            n_expanded++;
+            frontier.pop();        
 
+            // std::cout << "Exploring node:\n";
+            // print_state(current);
+
+            n_expanded++;
 
             // Goal check
             if (current == goal) {
@@ -227,11 +230,15 @@ bool Puzzle<BITS_GRID>::solve_idfs(const u_int64_t& start) const {
             if (depth >= depth_limit) {
                 continue;
             }
-
+            
+            std::vector<u_int64_t> mock_children = expand(current);
+            std::reverse(mock_children.begin(), mock_children.end());
             // Expand neighbors (children)
             // This is optional but ensures consistency.
-            for (u_int64_t& child : expand(current)) {
+            for (const u_int64_t& child : mock_children) {
                 int new_depth = depth + 1;
+                // std::cout << "Exploring to:\n";
+                // print_state(child);
                 // If we haven't seen this child before, or if we found a shorter path to it,
                 // add it to the frontier.
                 if (visited_depth.find(child) == visited_depth.end() || visited_depth[child] > new_depth) {
@@ -260,10 +267,11 @@ bool Puzzle<BITS_GRID>::solve_idfs(const u_int64_t& start) const {
             std::reverse(path.begin(), path.end());
 
             std::cout << "Solution found with IDFS:" << std::endl;
-            std::cout << n_expanded << "," << path.size() << "," << seconds << "," << 0 << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
+            std::cout << n_expanded << "," << path.size() - 1 << "," << seconds << "," << 0 << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
 
             return true;
         }
+        depth_limit++;
     }
 
     // This part is generally unreachable if a solution exists.
