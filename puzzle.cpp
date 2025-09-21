@@ -14,7 +14,7 @@ void Puzzle<BITS_GRID>::solve(const std::string& algorithm) {
         } else if (algorithm == ASTAR) {
             solve_astar(start);
         } else if (algorithm == IDASTAR) {
-            solve_iastar(start);
+            solve_idastar(start);
         } else if (algorithm == GBFS) {
             solve_gbfs(start);
         }
@@ -282,19 +282,149 @@ bool Puzzle<BITS_GRID>::solve_idfs(const u_int64_t& start) const {
 }
 
 template<size_t BITS_GRID>
-bool Puzzle<BITS_GRID>::solve_astar(const u_int64_t& start) const{
-    // TODO: Setup nodes
-    std::cout << start << std::endl;
-    // TODO: implement actual ASTAR search using expand()
+bool Puzzle<BITS_GRID>::solve_astar(const u_int64_t& start) const {
+    using State = u_int64_t;
+    using Cost = u_int32_t;
+
+    struct Node {
+        State state;
+        Cost g; // cost so far
+        Cost f; // g + h
+
+        bool operator>(const Node& other) const {
+            return f > other.f; // min-heap
+        }
+    };
+
+    std::unordered_map<State, Cost> g_costs;
+    std::priority_queue<Node, std::vector<Node>, std::greater<Node>> frontier;
+
+    g_costs[start] = 0;
+    frontier.push({start, 0, static_cast<Cost>(manhattan_distance(start))});
+
+    u_int32_t n_expanded = 0;
+    double h_sum = 0.0;  // track heuristic sum
+
+    auto start_time = std::chrono::high_resolution_clock::now();
+
+    if (start == goal) {
+        auto end_time = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+        double seconds = duration.count() / 1'000'000.0;
+
+        double avg_h = static_cast<int>(manhattan_distance(start)); // only one state
+        std::cout << "Solution found with A*:" << std::endl;
+        std::cout << n_expanded << "," << 0 << "," << seconds << "," << avg_h << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
+        return true;
+    }
+
+    while (!frontier.empty()) {
+        Node current = frontier.top();
+        frontier.pop();
+
+        n_expanded++;
+        int h_val = static_cast<int>(manhattan_distance(current.state));
+        h_sum += h_val;
+
+        if (current.state == goal) {
+            auto end_time = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+            double seconds = duration.count() / 1'000'000.0;
+
+            double avg_h = (n_expanded > 0) ? (h_sum / n_expanded) : 0.0;
+
+            std::cout << "Solution found with A*:" << std::endl;
+            std::cout << n_expanded << "," << current.g << "," << seconds << "," << avg_h << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
+            return true;
+        }
+
+        for (State child : expand(current.state)) {
+            Cost tentative_g = current.g + 1;
+
+            if (g_costs.find(child) == g_costs.end() || tentative_g < g_costs[child]) {
+                g_costs[child] = tentative_g;
+                Cost h = static_cast<Cost>(manhattan_distance(child));
+                frontier.push({child, tentative_g, tentative_g + h});
+            }
+        }
+    }
+
+    std::cout << "Nenhuma solução encontrada.\n";
     return false;
 }
 
 template<size_t BITS_GRID>
-bool Puzzle<BITS_GRID>::solve_iastar(const u_int64_t& start) const{
-    // TODO: Setup nodes
-    std::cout << start << std::endl;
-    // TODO: implement actual IASTAR search using expand()
-    return false;
+bool Puzzle<BITS_GRID>::solve_idastar(const u_int64_t& start) const {
+    struct Frame {
+        u_int64_t state;
+        int g;
+        int h;
+        size_t child_index;
+        std::vector<u_int64_t> children;
+    };
+
+    auto start_time = std::chrono::high_resolution_clock::now();
+
+    int bound = manhattan_distance(start);
+
+    while (true) {
+        u_int32_t n_expanded = 0;
+        double h_sum = 0.0;
+        int min_cutoff = std::numeric_limits<int>::max();
+
+        std::stack<Frame> stack;
+        stack.push({start, 0, manhattan_distance(start), 0, {}});
+
+        while (!stack.empty()) {
+            Frame &node = stack.top();
+            int f = node.g + node.h;
+
+            // Cutoff check
+            if (f > bound) {
+                if (f < min_cutoff) min_cutoff = f;
+                stack.pop();
+                continue;
+            }
+
+            // Expansion counting (only first time we see the node)
+            if (node.child_index == 0) {
+                n_expanded++;
+                h_sum += node.h;
+            }
+
+            // Goal check
+            if (node.state == goal) {
+                auto end_time = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+                double seconds = duration.count() / 1'000'000.0;
+                double avg_h = (n_expanded > 0) ? (h_sum / n_expanded) : 0.0;
+
+                std::cout << "Solution found with IDA*:" << std::endl;
+                std::cout << n_expanded << "," << node.g << "," << seconds << "," << avg_h << "," << manhattan_distance(start) << std::endl;
+                return true;
+            }
+
+            // Expand children lazily
+            if (node.children.empty()) {
+                node.children = expand(node.state);
+            }
+
+            if (node.child_index < node.children.size()) {
+                u_int64_t child = node.children[node.child_index++];
+                int h_child = manhattan_distance(child);
+                stack.push({child, node.g + 1, h_child, 0, {}});
+            } else {
+                stack.pop();
+            }
+        }
+
+        if (min_cutoff == std::numeric_limits<int>::max()) {
+            std::cout << "Nenhuma solução encontrada.\n";
+            return false;
+        }
+
+        bound = min_cutoff; // increase cutoff
+    }
 }
 
 template<size_t BITS_GRID>

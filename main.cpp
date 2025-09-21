@@ -34,9 +34,9 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     std::string algorithm = std::string(argv[1]);
-    if(algorithm != "-bfs"   && algorithm != "-idfs"    &&
-       algorithm != "-astar" && algorithm != "-idastar" &&
-       algorithm != "-gbfs") {
+    if(algorithm != BFS   && algorithm != IDFS    &&
+       algorithm != ASTAR && algorithm != IDASTAR &&
+       algorithm != GBFS) {
         std::cerr << "[ERROR] -> " << usage_msg << std::endl;
         return 2;
     }

@@ -16,7 +16,7 @@
 #define BFS "-bfs"
 #define IDFS "-idfs"
 #define ASTAR "-astar"
-#define IDASTAR "idastar"
+#define IDASTAR "-idastar"
 #define GBFS "-gbfs"
 
 constexpr int TILE_BITS = 4;
@@ -47,7 +47,7 @@ private:
     bool solve_bfs(const u_int64_t& start) const;
     bool solve_idfs(const u_int64_t& start) const;
     bool solve_astar(const u_int64_t& start) const;
-    bool solve_iastar(const u_int64_t& start) const;
+    bool solve_idastar(const u_int64_t& start) const;
     bool solve_gbfs(const u_int64_t& start) const;
 
     int max_pos;
