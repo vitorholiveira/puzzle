@@ -428,62 +428,65 @@ bool Puzzle<BITS_GRID>::solve_idastar(const u_int64_t& start) const {
 }
 
 template<size_t BITS_GRID>
-bool Puzzle<BITS_GRID>::solve_gbfs(const u_int64_t& start) const{
-    // A map to store states we've seen and a pair:
-    // - First element is the path length;
-    // - Second element is the sum of all heuristic value.
-    std::unordered_map<u_int64_t, std::pair<u_int32_t, u_int64_t>> expansion_counts;
-
-    // Use a min-priority queue to store states to explore.
-    // The pair stores <heuristic_value, state_representation>
-    // std::greater<std::pair<u_int32_t, u_int64_t>> makes it a min-heap based on the first element (the heuristic).
-    std::priority_queue<std::pair<u_int16_t, u_int64_t>,
-                        std::vector<std::pair<u_int16_t, u_int64_t>>,
-                        std::greater<std::pair<u_int16_t, u_int64_t>>> frontier;
-
+bool Puzzle<BITS_GRID>::solve_gbfs(const u_int64_t& start) const {
+    // expansion_counts guarda o g (número de passos até o nó)
+    std::unordered_map<u_int64_t, u_int32_t> expansion_counts;
     u_int32_t n_expanded = 0;
+    u_int64_t insertion_order = 0; // controla o desempate LIFO
 
-    u_int16_t start_heuristic = manhattan_distance(start);
+    // Comparador para priority_queue
+    auto cmp = [&](const std::tuple<u_int64_t,u_int32_t,u_int64_t>& a,
+                   const std::tuple<u_int64_t,u_int32_t,u_int64_t>& b) {
+        // a = (estado, g, ordem)
+        u_int64_t state_a = std::get<0>(a);
+        u_int32_t g_a = std::get<1>(a);
+        u_int64_t order_a = std::get<2>(a);
 
-    frontier.push({start_heuristic, start});
-    expansion_counts[start] = {0, static_cast<u_int64_t>(start_heuristic)};
+        u_int64_t state_b = std::get<0>(b);
+        u_int32_t g_b = std::get<1>(b);
+        u_int64_t order_b = std::get<2>(b);
+
+        u_int32_t h_a = manhattan_distance(state_a);
+        u_int32_t h_b = manhattan_distance(state_b);
+
+        if (h_a != h_b) return h_a > h_b;   // menor h tem prioridade
+        if (g_a != g_b) return g_a < g_b;   // maior g tem prioridade
+        return order_a < order_b;           // LIFO: último inserido tem prioridade
+    };
+
+    std::priority_queue<
+        std::tuple<u_int64_t,u_int32_t,u_int64_t>, // estado, g, ordem
+        std::vector<std::tuple<u_int64_t,u_int32_t,u_int64_t>>,
+        decltype(cmp)
+    > frontier(cmp);
 
     auto start_time = std::chrono::high_resolution_clock::now();
 
+    // nó inicial
+    expansion_counts[start] = 0;
+    frontier.push({start, 0, insertion_order++});
+
+    if (start == goal) {
+        auto end_time = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+        double seconds = duration.count() / 1'000'000.0;
+
+        std::cout << "Solution found with GBFS:" << std::endl;
+        std::cout << n_expanded << "," << 0 << "," << seconds << "," << 0
+                  << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
+        return true;
+    }
+
     while (!frontier.empty()) {
-        // Get the state with the lowest heuristic value (the "best" one).
-        // The 'top()' method returns a reference to the top element.
-        u_int64_t current = frontier.top().second;
-        u_int16_t current_heuristic = frontier.top().first;
-
-        // Then, remove it from the frontier.
+        auto [current, g, order] = frontier.top();
         frontier.pop();
-
-        std::cout << "==> Exploring node:\n";
-        print_state(current);
-        std::cout << "heuristic value: " << static_cast<int>(current_heuristic) << std::endl << std::endl;
-
-        // If we've already expanded this state, skip it to avoid redundant work.
-        if (expansion_counts.find(current) != expansion_counts.end() && expansion_counts[current].first < n_expanded) {
-            continue;
-        }
-        
         n_expanded++;
 
-        // Expand neighbors
         for (u_int64_t child : expand(current)) {
-            // Check if we've seen this child before.
-            if (expansion_counts.find(child) != expansion_counts.end()) continue; 
+            if (expansion_counts.find(child) != expansion_counts.end())
+                continue; // já visitado
 
-            std::cout << "Expanding to:\n";
-            print_state(child);
-            u_int16_t h = manhattan_distance(child);
-            std::cout << "heuristic value: " << static_cast<int>(h) << std::endl << std::endl;
-
-            // If not, calculate its heuristic and add to the frontier.
-            u_int16_t child_heuristic = manhattan_distance(child);
-            frontier.push({child_heuristic, child});
-            expansion_counts[child] = {expansion_counts[current].first + 1, expansion_counts[current].second + static_cast<u_int64_t>(child_heuristic)};
+            expansion_counts[child] = g + 1;
 
             if (child == goal) {
                 auto end_time = std::chrono::high_resolution_clock::now();
@@ -491,9 +494,12 @@ bool Puzzle<BITS_GRID>::solve_gbfs(const u_int64_t& start) const{
                 double seconds = duration.count() / 1'000'000.0;
 
                 std::cout << "Solution found with GBFS:" << std::endl;
-                std::cout << n_expanded << "," << expansion_counts[current].first << "," << seconds << "," <<float(expansion_counts[current].second) / expansion_counts[current].first << "," << start_heuristic << std::endl;
+                std::cout << n_expanded << "," << expansion_counts[child] << ","
+                          << seconds << "," << 0 << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
                 return true;
             }
+
+            frontier.push({child, g + 1, insertion_order++});
         }
     }
 
