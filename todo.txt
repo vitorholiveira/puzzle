@@ -1,0 +1,5 @@
+A*: solução ótima, mas expandindo errado
+BFS: ok
+IDA*: solução ótima, mas expandindo errado
+IDFS: solução ótima, mas expandindo errado
+GBFS: solução igual, expandindo certo mas valor médio da heurística errado

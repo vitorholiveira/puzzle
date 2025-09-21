@@ -283,69 +283,60 @@ bool Puzzle<BITS_GRID>::solve_idfs(const u_int64_t& start) const {
 
 template<size_t BITS_GRID>
 bool Puzzle<BITS_GRID>::solve_astar(const u_int64_t& start) const {
-    using State = u_int64_t;
-    using Cost = u_int32_t;
+    // Elemento: (f, g, h, -ordem, estado, pai)
+    using Elem = std::tuple<u_int32_t,u_int32_t,u_int32_t,int,u_int64_t,u_int64_t>;
 
-    struct Node {
-        State state;
-        Cost g; // cost so far
-        Cost f; // g + h
-
-        bool operator>(const Node& other) const {
-            return f > other.f; // min-heap
-        }
+    auto cmp = [](const Elem& a, const Elem& b) {
+        // priority_queue é max-heap, invertendo para min-heap
+        if (std::get<0>(a) != std::get<0>(b)) return std::get<0>(a) > std::get<0>(b); // menor f
+        if (std::get<1>(a) != std::get<1>(b)) return std::get<1>(a) > std::get<1>(b); // menor g
+        if (std::get<2>(a) != std::get<2>(b)) return std::get<2>(a) > std::get<2>(b); // menor h
+        return std::get<3>(a) > std::get<3>(b);                                      // LIFO (ordem negativa)
     };
 
-    std::unordered_map<State, Cost> g_costs;
-    std::priority_queue<Node, std::vector<Node>, std::greater<Node>> frontier;
-
-    g_costs[start] = 0;
-    frontier.push({start, 0, static_cast<Cost>(manhattan_distance(start))});
+    std::priority_queue<Elem, std::vector<Elem>, decltype(cmp)> frontier(cmp);
+    std::unordered_map<u_int64_t, u_int32_t> g_score;
 
     u_int32_t n_expanded = 0;
-    double h_sum = 0.0;  // track heuristic sum
+    int order = 0;
+
+    u_int32_t h_start = static_cast<u_int32_t>(manhattan_distance(start));
+    frontier.push({h_start, 0, h_start, -order++, start, 0ULL});
+    g_score[start] = 0;
 
     auto start_time = std::chrono::high_resolution_clock::now();
 
     if (start == goal) {
         auto end_time = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-        double seconds = duration.count() / 1'000'000.0;
-
-        double avg_h = static_cast<int>(manhattan_distance(start)); // only one state
-        std::cout << "Solution found with A*:" << std::endl;
-        std::cout << n_expanded << "," << 0 << "," << seconds << "," << avg_h << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
+        double seconds = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count() / 1'000'000.0;
+        std::cout << "Solution found with A*:\n";
+        std::cout << n_expanded << "," << 0 << "," << seconds << "," << 0 << "," << h_start << std::endl;
         return true;
     }
 
     while (!frontier.empty()) {
-        Node current = frontier.top();
+        auto [f, g, h, neg_order, state, parent] = frontier.top();
         frontier.pop();
-
         n_expanded++;
-        int h_val = static_cast<int>(manhattan_distance(current.state));
-        h_sum += h_val;
 
-        if (current.state == goal) {
+        if (state == goal) {
             auto end_time = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-            double seconds = duration.count() / 1'000'000.0;
-
-            double avg_h = (n_expanded > 0) ? (h_sum / n_expanded) : 0.0;
-
-            std::cout << "Solution found with A*:" << std::endl;
-            std::cout << n_expanded << "," << current.g << "," << seconds << "," << avg_h << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
+            double seconds = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count() / 1'000'000.0;
+            std::cout << "Solution found with A*:\n";
+            std::cout << n_expanded << "," << g << "," << seconds << "," << f << "," << h_start << std::endl;
             return true;
         }
 
-        for (State child : expand(current.state)) {
-            Cost tentative_g = current.g + 1;
+        for (u_int64_t child : expand(state)) {
+            if (child == parent) continue; // *** evita gerar o pai ***
 
-            if (g_costs.find(child) == g_costs.end() || tentative_g < g_costs[child]) {
-                g_costs[child] = tentative_g;
-                Cost h = static_cast<Cost>(manhattan_distance(child));
-                frontier.push({child, tentative_g, tentative_g + h});
-            }
+            u_int32_t g_child = g + 1;
+            auto it = g_score.find(child);
+            if (it != g_score.end() && g_child >= it->second) continue;
+
+            g_score[child] = g_child;
+            u_int32_t h_child = static_cast<u_int32_t>(manhattan_distance(child));
+            frontier.push({g_child + h_child, g_child, h_child, -order++, child, state});
         }
     }
 
