@@ -62,6 +62,13 @@ private:
     bool solve_astar(const u_int64_t& start);
     bool solve_idastar(const u_int64_t& start);
     bool solve_gbfs(const u_int64_t& start);
+    int recursive_dls(
+    const u_int64_t& current_state, 
+    const u_int64_t& parent_state,
+    u_int32_t limit, 
+    u_int32_t current_depth,
+    u_int32_t& n_expanded,
+    u_int32_t& solution_depth);
 
     int max_pos;
     int grid_size;

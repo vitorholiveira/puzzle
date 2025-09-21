@@ -174,75 +174,89 @@ bool Puzzle::solve_bfs(const u_int64_t& start) {
     return false;
 }
 
-// bool Puzzle::solve_idfs(const u_int64_t& start) {
-//     int n_expanded = 0;
-//     auto start_time = std::chrono::high_resolution_clock::now();
-
-//     for (int depth_limit = 0; depth_limit < 99999; depth_limit++) {
-//         std::stack<std::tuple<u_int64_t, u_int16_t, size_t>> frontier;
-//         std::unordered_map<u_int64_t, u_int64_t> parent_map;
-//         std::unordered_set<u_int64_t> visited;
+bool Puzzle::solve_idfs(const u_int64_t& start) {
+    u_int32_t n_expanded = 0;
+    
+    auto start_time = std::chrono::high_resolution_clock::now();
+    
+    // Verifica se já começamos no goal
+    if (start == goal) {
+        auto end_time = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+        double seconds = duration.count() / 1'000'000.0;
         
-//         frontier.push({start, 0, 0});
-//         bool solution_found = false;
+        std::cout << "Solution found with IDFS:" << std::endl;
+        std::cout << n_expanded << "," << 0 << "," << seconds << "," << 0 << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
+        return true;
+    }
 
-//         while (!frontier.empty()) {
-//             auto [current, depth, child_index] = frontier.top();
+    for (u_int32_t depth_limit = 1; depth_limit <= 50; depth_limit++) {
+        u_int32_t solution_depth = 0;
+        
+        int result = recursive_dls(start, 0, depth_limit, 0, n_expanded, solution_depth);
+        
+        if (result == 1) {
+            auto end_time = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+            double seconds = duration.count() / 1'000'000.0;
             
-//             if (child_index == 0) {
-//                 if (current == goal) {
-//                     solution_found = true;
-//                     break;
-//                 }
-                
-//                 if (visited.count(current) || depth >= depth_limit) {
-//                     visited.erase(current);
-//                     frontier.pop();
-//                     continue;
-//                 }
-                
-//                 visited.insert(current);
-//                 n_expanded++;
-//             }
-            
-//             std::vector<u_int64_t> children = expand(current);
-            
-//             if (child_index < children.size()) {
-//                 u_int64_t child = children[child_index];
-//                 std::get<2>(frontier.top()) = child_index + 1;
-                
-//                 if (visited.find(child) == visited.end()) {
-//                     parent_map[child] = current;
-//                     frontier.push({child, static_cast<u_int16_t>(depth + 1), 0});
-//                 }
-//             } else {
-//                 visited.erase(current);
-//                 frontier.pop();
-//             }
-//         }
+            std::cout << "Solution found with IDFS:" << std::endl;
+            std::cout << n_expanded << "," << solution_depth << "," << seconds << "," << 0 << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
+            return true;
+        }
+        
+        if (result == 0) {
+            break;
+        }
+    }
+    
+    std::cout << "Nenhuma solução encontrada.\n";
+    return false;
+}
 
-//         if (solution_found) {
-//             // Reconstruir caminho e imprimir resultado
-//             auto end_time = std::chrono::high_resolution_clock::now();
-//             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-//             double seconds = duration.count() / 1'000'000.0;
+int Puzzle::recursive_dls(
+    const u_int64_t& current_state, 
+    const u_int64_t& parent_state,
+    u_int32_t limit, 
+    u_int32_t current_depth,
+    u_int32_t& n_expanded,
+    u_int32_t& solution_depth) {
+    
+    // Goal test
+    if (current_state == goal) {
+        solution_depth = current_depth;
+        return 1;
+    }
+    
+    if (limit == 0) {
+        return -1;
+    }
+    
+    n_expanded++;
+    
+    bool cutoff_occurred = false;
+    
+    for (u_int64_t child : expand(current_state)) {
+        if (child == parent_state) {
+            continue;
+        }
+        
+        int result = recursive_dls(child, current_state, limit - 1, current_depth + 1, n_expanded, solution_depth);
+        
+        if (result == -1) {
+            cutoff_occurred = true;
+        } else if (result == 1) {
+            return 1;
+        }
+    }
+    
+    if (cutoff_occurred) {
+        return -1;
+    } else {
+        return 0;
+    }
+}
 
-//             std::vector<u_int64_t> path;
-//             u_int64_t path_node = goal;
-//             while (parent_map.count(path_node) && path_node != start) {
-//                 path.push_back(path_node);
-//                 path_node = parent_map[path_node];
-//             }
-//             path.push_back(start);
-//             std::reverse(path.begin(), path.end());
-
-//             std::cout << n_expanded << "," << path.size() - 1 << "," << seconds << "," << 0 << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
-
-//             return true;
-//         }
-//     }
-//     return false;
-// }
 
 bool Puzzle::solve_astar(const u_int64_t& start) {
     using Node = std::tuple<u_int64_t, u_int32_t, u_int64_t>; // state, g, insertion order
