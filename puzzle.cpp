@@ -185,7 +185,7 @@ bool Puzzle::solve_idfs(const u_int64_t& start) {
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
         double seconds = duration.count() / 1'000'000.0;
         
-        std::cout << n_expanded << "," << 0 << "," << seconds << "," << 0 << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
+        SearchStatistics(n_expanded, 0, seconds, 0, manhattan_distance(start));
         return true;
     }
 
@@ -199,7 +199,7 @@ bool Puzzle::solve_idfs(const u_int64_t& start) {
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
             double seconds = duration.count() / 1'000'000.0;
             
-            std::cout << n_expanded << "," << solution_depth << "," << seconds << "," << 0 << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
+            SearchStatistics(n_expanded, solution_depth, seconds, 0, manhattan_distance(start));
             return true;
         }
         
@@ -309,7 +309,8 @@ bool Puzzle::solve_astar(const u_int64_t& start) {
             }
 
             u_int32_t h_start = static_cast<u_int32_t>(manhattan_distance(start));
-            std::cout << n_expanded << "," << g << "," << seconds << "," << avg_h << "," << h_start << std::endl;
+
+            SearchStatistics(n_expanded, g, seconds, avg_h, h_start);
             return true;
         }
 
@@ -433,7 +434,7 @@ bool Puzzle::solve_gbfs(const u_int64_t& start) {
         double seconds = duration.count() / 1'000'000.0;
         int h_start = static_cast<int>(manhattan_distance(start));
 
-        std::cout << n_expanded << "," << 0 << "," << seconds << "," << h_start << "," << h_start << std::endl;
+        SearchStatistics(n_expanded, 0, seconds, h_start, h_start);
         return true;
     }
     bool found_solution = false;
@@ -462,8 +463,9 @@ bool Puzzle::solve_gbfs(const u_int64_t& start) {
         for (const auto &state : visited) {
             heuristic_sum += static_cast<u_int64_t>(manhattan_distance(state));
         }
-
-        std::cout << n_expanded << "," << std::get<1>(final_state) << "," << seconds << "," << float(heuristic_sum) / visited.size() << "," << h_start << std::endl;
+        auto g = std::get<1>(final_state);
+        auto avg_h = float(heuristic_sum) / visited.size();
+        SearchStatistics(n_expanded, g, seconds, avg_h, h_start);
         return true;
     }
 

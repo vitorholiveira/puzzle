@@ -29,11 +29,15 @@ constexpr int MOVE_UP_15  = 4;
 constexpr int MOVE_DOWN_15 = -4;
 
 struct SearchStatistics {
-    u_int32_t expanded = 0;
-    u_int32_t solution_depth = 0;
-    double elapsed_seconds = 0.0;
-    double avg_heuristic = 0.0;
-    u_int32_t start_heuristic = 0;
+    u_int32_t expanded;
+    u_int32_t solution_depth;
+    double elapsed_seconds;
+    double avg_heuristic;
+    u_int32_t start_heuristic;
+    SearchStatistics(u_int32_t expanded = 0, u_int32_t solution_depth = 0,  double elapsed_seconds = 0.0,
+                     double avg_heuristic = 0.0, u_int32_t start_heuristic = 0) :
+                     expanded(expanded), solution_depth(solution_depth), elapsed_seconds(elapsed_seconds),
+                     avg_heuristic(avg_heuristic), start_heuristic(start_heuristic) { print(); }
 
     void print() const {
         std::cout << expanded << ","
