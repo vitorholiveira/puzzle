@@ -438,6 +438,7 @@ bool Puzzle<BITS_GRID>::solve_gbfs(const u_int64_t& start) const {
 
     auto start_time = std::chrono::high_resolution_clock::now();
     u_int64_t heuristic_sum = static_cast<u_int64_t>(manhattan_distance(start));
+    int n_visited = 1;
 
     // nó inicial
     visited[start] = {0, static_cast<u_int64_t>(manhattan_distance(start))};
@@ -452,31 +453,36 @@ bool Puzzle<BITS_GRID>::solve_gbfs(const u_int64_t& start) const {
                   << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
         return true;
     }
+    bool found_solution = false;
 
-    while (!frontier.empty()) {
+    while (!found_solution) {
         auto [current, g, order] = frontier.top();
         frontier.pop();
+
         n_expanded++;
-        heuristic_sum += static_cast<u_int64_t>(manhattan_distance(current));
 
         for (u_int64_t child : expand(current)) {
             if (visited.find(child) != visited.end())
                 continue;
 
+            heuristic_sum += static_cast<u_int64_t>(manhattan_distance(child));
+            n_visited++;
+
             visited[child] = {g + 1, visited[current].second + static_cast<u_int64_t>(manhattan_distance(child))};
 
-            if (child == goal) {
-                auto end_time = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-                double seconds = duration.count() / 1'000'000.0;
-
-                std::cout << n_expanded << "," << visited[child].first << ","
-                          << seconds << "," << float(heuristic_sum) / n_expanded << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
-                return true;
-            }
+            if (child == goal) found_solution = true;
 
             frontier.push({child, g + 1, insertion_order++});
         }
+    }
+    if(found_solution){
+        auto end_time = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+        double seconds = duration.count() / 1'000'000.0;
+
+        std::cout << n_expanded << "," << visited[goal].first << ","
+                    << seconds << "," << float(heuristic_sum) / n_visited << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
+        return true;
     }
 
     return false;
