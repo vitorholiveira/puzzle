@@ -1,6 +1,6 @@
 # Compiler
 CXX = g++
-CXXFLAGS = -Wall -Wextra -std=c++23
+CXXFLAGS = -Wall -Wextra -std=c++23 -O3 -march=native
 
 # Executable name
 TARGET = main
@@ -16,13 +16,16 @@ all: $(TARGET)
 $(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
-# Compile .cpp into .o
+# Compile .cpp into .o with dependency generation
 %.o: %.cpp puzzle.h
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
+
+# Include dependencies
+-include $(OBJS:.o=.d)
 
 # Clean build files
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -f $(OBJS) $(TARGET) $(OBJS:.o=.d)
 
 # Run program
 run: $(TARGET)

@@ -259,7 +259,7 @@ int Puzzle::recursive_dls(
 
 
 bool Puzzle::solve_astar(const u_int64_t& start) {
-    using Node = std::tuple<u_int64_t, u_int32_t, u_int64_t>; // state, g, insertion order
+    using Node = std::tuple<u_int64_t, u_int32_t, u_int64_t, u_int32_t>; // state, g, insertion order, h
     std::unordered_map<u_int64_t, u_int64_t> parent;          // for path reconstruction
     std::unordered_map<u_int64_t, u_int32_t> g_score;         // best g found so far (discovered nodes)
     std::unordered_set<u_int64_t> closed;                     // expanded states
@@ -269,12 +269,12 @@ bool Puzzle::solve_astar(const u_int64_t& start) {
     // Priority by f = g + h, then lower h, then LIFO
     auto cmp = [&](const Node& a, const Node& b) {
         auto f = [&](const Node& n) {
-            return std::get<1>(n) + (u_int32_t)manhattan_distance(std::get<0>(n));
+            return std::get<1>(n) + std::get<3>(n);
         };
         u_int32_t f_a = f(a), f_b = f(b);
         if (f_a != f_b) return f_a > f_b;                     // lower f first
-        u_int32_t h_a = (u_int32_t)manhattan_distance(std::get<0>(a));
-        u_int32_t h_b = (u_int32_t)manhattan_distance(std::get<0>(b));
+        u_int32_t h_a = std::get<3>(a);
+        u_int32_t h_b = std::get<3>(b);
         if (h_a != h_b) return h_a > h_b;                     // then lower h
         return std::get<2>(a) < std::get<2>(b);               // then newer first (LIFO)
     };
@@ -286,10 +286,10 @@ bool Puzzle::solve_astar(const u_int64_t& start) {
     // initialize
     g_score[start] = 0;
     parent[start]  = start;
-    frontier.push({start, 0, insertion_order++});
+    frontier.push({start, 0, insertion_order++, (u_int32_t)manhattan_distance(start)});
 
     while (!frontier.empty()) {
-        auto [current, g, order] = frontier.top();
+        auto [current, g, order, h] = frontier.top();
         frontier.pop();
 
         if (closed.count(current)) continue;  // already expanded with best cost
@@ -323,7 +323,7 @@ bool Puzzle::solve_astar(const u_int64_t& start) {
             if (!g_score.count(child) || g_new < g_score[child]) {
                 g_score[child] = g_new;
                 parent[child]  = current;
-                frontier.push({child, g_new, insertion_order++});
+                frontier.push({child, g_new, insertion_order++, (u_int32_t)manhattan_distance(child)});
             }
         }
     }
