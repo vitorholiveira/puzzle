@@ -215,10 +215,10 @@ bool Puzzle<BITS_GRID>::solve_idfs(const u_int64_t& start) const {
             auto [current, depth] = frontier.top();
             frontier.pop();        
 
+            // std::cout << "===> " << depth << std::endl;
             // std::cout << "Exploring node:\n";
             // print_state(current);
 
-            n_expanded++;
 
             // Goal check
             if (current == goal) {
@@ -230,6 +230,8 @@ bool Puzzle<BITS_GRID>::solve_idfs(const u_int64_t& start) const {
             if (depth >= depth_limit) {
                 continue;
             }
+
+            n_expanded++;
             
             std::vector<u_int64_t> mock_children = expand(current);
             std::reverse(mock_children.begin(), mock_children.end());
