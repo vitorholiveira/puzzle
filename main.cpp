@@ -47,10 +47,10 @@ int main(int argc, char* argv[]) {
     std::vector<std::vector<int>> states = read_states(argc, argv);
     int type = states[0].size() - 1;
     if(type == 8) {
-        Puzzle<BITS_GRID_8> puzzle(states);
+        Puzzle puzzle(states);
         puzzle.solve(algorithm);
     } else if(type == 15) {
-        Puzzle<BITS_GRID_15> puzzle(states);
+        Puzzle puzzle(states);
         if (algorithm == ASTAR) {
             puzzle.solve(algorithm);
         }
