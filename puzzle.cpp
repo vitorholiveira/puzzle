@@ -376,8 +376,8 @@ bool Puzzle::solve_idastar(const u_int64_t& start) const {
 }
 
 bool Puzzle::solve_gbfs(const u_int64_t& start) const {
-    // expansion_counts guarda o g (número de passos até o nó) e f (valor da heurística)
-    std::unordered_map<u_int64_t, std::pair<u_int32_t,u_int64_t>> visited;
+    // expansion_counts guarda o g (número de passos até o nó)
+    std::unordered_map<u_int64_t, u_int32_t> visited;
     u_int32_t n_expanded = 0;
     u_int64_t insertion_order = 0; // controla o desempate LIFO
 
@@ -403,7 +403,7 @@ bool Puzzle::solve_gbfs(const u_int64_t& start) const {
     int n_visited = 1;
 
     // nó inicial
-    visited[start] = {0, static_cast<u_int64_t>(manhattan_distance(start))};
+    visited[start] = 0;
     frontier.push({start, 0, insertion_order++});
 
     if (start == goal) {
@@ -420,6 +420,8 @@ bool Puzzle::solve_gbfs(const u_int64_t& start) const {
     while (!found_solution) {
         auto [current, g, order] = frontier.top();
         frontier.pop();
+        // std::cout << "==> Exploring node:\n";
+        // print_state(current);
 
         n_expanded++;
 
@@ -427,10 +429,15 @@ bool Puzzle::solve_gbfs(const u_int64_t& start) const {
             if (visited.find(child) != visited.end())
                 continue;
 
+
             heuristic_sum += static_cast<u_int64_t>(manhattan_distance(child));
             n_visited++;
+            
+            // std::cout << "Expanding to:\n";
+            // print_state(child);
+            // std::cout << "heuristic avg: " << float(heuristic_sum) / n_visited << std::endl;
 
-            visited[child] = {g + 1, visited[current].second + static_cast<u_int64_t>(manhattan_distance(child))};
+            visited[child] = g + 1;
 
             if (child == goal) found_solution = true;
 
@@ -442,7 +449,7 @@ bool Puzzle::solve_gbfs(const u_int64_t& start) const {
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
         double seconds = duration.count() / 1'000'000.0;
 
-        std::cout << n_expanded << "," << visited[goal].first << ","
+        std::cout << n_expanded << "," << visited[goal] << ","
                     << seconds << "," << float(heuristic_sum) / n_visited << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
         return true;
     }
