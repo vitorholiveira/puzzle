@@ -191,76 +191,59 @@ bool Puzzle<BITS_GRID>::solve_bfs(const u_int64_t& start) const {
 template<size_t BITS_GRID>
 bool Puzzle<BITS_GRID>::solve_idfs(const u_int64_t& start) const {
     int n_expanded = 0;
-
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    int depth_limit = 0;
-    // The main IDFS loop: iterate through increasing depth limits.
-    while (true) {
-        // The stack stores pairs of {state, current_depth}
-        std::stack<std::pair<u_int64_t, u_int16_t>> frontier;
-        // Map to store parent-child relationships for path reconstruction.
+    for (int depth_limit = 0; depth_limit < 99999; depth_limit++) {
+        std::stack<std::tuple<u_int64_t, u_int16_t, size_t>> frontier;
         std::unordered_map<u_int64_t, u_int64_t> parent_map;
-        // Map to track the shallowest depth a node was visited at in this DLS run.
-        // This prevents cycles and redundant exploration within one iteration.
-        std::unordered_map<u_int64_t, u_int16_t> visited_depth;
-
-        frontier.push({start, 0});
-        visited_depth[start] = 0;
+        std::unordered_set<u_int64_t> visited;
         
-        bool solution_found_this_iteration = false;
-        
+        frontier.push({start, 0, 0});
+        bool solution_found = false;
 
         while (!frontier.empty()) {
-            auto [current, depth] = frontier.top();
-            frontier.pop();        
-
-            // std::cout << "===> " << depth << std::endl;
-            // std::cout << "Exploring node:\n";
-            // print_state(current);
-
-
-            // Goal check
-            if (current == goal) {
-                solution_found_this_iteration = true;
-                break; // Exit the while loop
-            }
-
-            // If at the depth limit, do not expand this node.
-            if (depth >= depth_limit) {
-                continue;
-            }
-
-            n_expanded++;
+            auto [current, depth, child_index] = frontier.top();
             
-            std::vector<u_int64_t> mock_children = expand(current);
-            std::reverse(mock_children.begin(), mock_children.end());
-            // Expand neighbors (children)
-            // This is optional but ensures consistency.
-            for (const u_int64_t& child : mock_children) {
-                int new_depth = depth + 1;
-                // std::cout << "Exploring to:\n";
-                // print_state(child);
-                // If we haven't seen this child before, or if we found a shorter path to it,
-                // add it to the frontier.
-                if (visited_depth.find(child) == visited_depth.end() || visited_depth[child] > new_depth) {
-                    visited_depth[child] = new_depth;
-                    parent_map[child] = current;
-                    frontier.push({child, new_depth});
+            if (child_index == 0) {
+                if (current == goal) {
+                    solution_found = true;
+                    break;
                 }
+                
+                if (visited.count(current) || depth >= depth_limit) {
+                    visited.erase(current);
+                    frontier.pop();
+                    continue;
+                }
+                
+                visited.insert(current);
+                n_expanded++;
+            }
+            
+            std::vector<u_int64_t> children = expand(current);
+            
+            if (child_index < children.size()) {
+                u_int64_t child = children[child_index];
+                std::get<2>(frontier.top()) = child_index + 1;
+                
+                if (visited.find(child) == visited.end()) {
+                    parent_map[child] = current;
+                    frontier.push({child, static_cast<u_int16_t>(depth + 1), 0});
+                }
+            } else {
+                visited.erase(current);
+                frontier.pop();
             }
         }
-        // Iterative DLS Ends
 
-        if (solution_found_this_iteration) {
+        if (solution_found) {
+            // Reconstruir caminho e imprimir resultado
             auto end_time = std::chrono::high_resolution_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
             double seconds = duration.count() / 1'000'000.0;
 
-            // Reconstruct the path from the parent map
             std::vector<u_int64_t> path;
             u_int64_t path_node = goal;
-            // The check 'path_node != start' handles the case where start == goal
             while (parent_map.count(path_node) && path_node != start) {
                 path.push_back(path_node);
                 path_node = parent_map[path_node];
@@ -269,14 +252,11 @@ bool Puzzle<BITS_GRID>::solve_idfs(const u_int64_t& start) const {
             std::reverse(path.begin(), path.end());
 
             std::cout << "Solution found with IDFS:" << std::endl;
-            std::cout << n_expanded << "," << path.size() - 1 << "," << seconds << "," << 0 << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
-
+            std::cout << n_expanded << "," << path.size() - 1 << "," << seconds << std::endl;
             return true;
         }
-        depth_limit++;
     }
 
-    // This part is generally unreachable if a solution exists.
     std::cout << "No solution found.\n";
     return false;
 }
@@ -427,22 +407,13 @@ bool Puzzle<BITS_GRID>::solve_gbfs(const u_int64_t& start) const {
 
     // Comparador para priority_queue
     auto cmp = [&](const std::tuple<u_int64_t,u_int32_t,u_int64_t>& a,
-                   const std::tuple<u_int64_t,u_int32_t,u_int64_t>& b) {
-        // a = (estado, g, ordem)
-        u_int64_t state_a = std::get<0>(a);
-        u_int32_t g_a = std::get<1>(a);
-        u_int64_t order_a = std::get<2>(a);
-
-        u_int64_t state_b = std::get<0>(b);
-        u_int32_t g_b = std::get<1>(b);
-        u_int64_t order_b = std::get<2>(b);
-
-        u_int32_t h_a = static_cast<u_int32_t>(manhattan_distance(state_a));
-        u_int32_t h_b = static_cast<u_int32_t>(manhattan_distance(state_b));
-
-        if (h_a != h_b) return h_a > h_b;   // menor h tem prioridade
-        if (g_a != g_b) return g_a < g_b;   // maior g tem prioridade
-        return order_a < order_b;           // LIFO: último inserido tem prioridade
+        const std::tuple<u_int64_t,u_int32_t,u_int64_t>& b) {
+        u_int32_t h_a = static_cast<u_int32_t>(manhattan_distance(std::get<0>(a)));
+        u_int32_t h_b = static_cast<u_int32_t>(manhattan_distance(std::get<0>(b)));
+        
+        if (h_a != h_b) return h_a > h_b;
+        if (std::get<1>(a) != std::get<1>(b)) return std::get<1>(a) < std::get<1>(b);
+        return std::get<2>(a) < std::get<2>(b);
     };
 
     std::priority_queue<

@@ -49,6 +49,10 @@ private:
     bool solve_astar(const u_int64_t& start) const;
     bool solve_idastar(const u_int64_t& start) const;
     bool solve_gbfs(const u_int64_t& start) const;
+    bool dls_recursive(const u_int64_t& state, int depth_limit, int current_depth,
+                       std::unordered_map<u_int64_t, u_int64_t>& parent_map,
+                       std::unordered_set<u_int64_t>& visited,
+                       int& n_expanded) const;
 
     int max_pos;
     int grid_size;
