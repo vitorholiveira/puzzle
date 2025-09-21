@@ -429,8 +429,8 @@ bool Puzzle<BITS_GRID>::solve_idastar(const u_int64_t& start) const {
 
 template<size_t BITS_GRID>
 bool Puzzle<BITS_GRID>::solve_gbfs(const u_int64_t& start) const {
-    // expansion_counts guarda o g (número de passos até o nó)
-    std::unordered_map<u_int64_t, u_int32_t> expansion_counts;
+    // expansion_counts guarda o g (número de passos até o nó) e f (valor da heurística)
+    std::unordered_map<u_int64_t, std::pair<u_int32_t,u_int64_t>> visited;
     u_int32_t n_expanded = 0;
     u_int64_t insertion_order = 0; // controla o desempate LIFO
 
@@ -446,8 +446,8 @@ bool Puzzle<BITS_GRID>::solve_gbfs(const u_int64_t& start) const {
         u_int32_t g_b = std::get<1>(b);
         u_int64_t order_b = std::get<2>(b);
 
-        u_int32_t h_a = manhattan_distance(state_a);
-        u_int32_t h_b = manhattan_distance(state_b);
+        u_int32_t h_a = static_cast<u_int32_t>(manhattan_distance(state_a));
+        u_int32_t h_b = static_cast<u_int32_t>(manhattan_distance(state_b));
 
         if (h_a != h_b) return h_a > h_b;   // menor h tem prioridade
         if (g_a != g_b) return g_a < g_b;   // maior g tem prioridade
@@ -463,7 +463,7 @@ bool Puzzle<BITS_GRID>::solve_gbfs(const u_int64_t& start) const {
     auto start_time = std::chrono::high_resolution_clock::now();
 
     // nó inicial
-    expansion_counts[start] = 0;
+    visited[start] = {0, static_cast<u_int64_t>(manhattan_distance(start))};
     frontier.push({start, 0, insertion_order++});
 
     if (start == goal) {
@@ -483,10 +483,10 @@ bool Puzzle<BITS_GRID>::solve_gbfs(const u_int64_t& start) const {
         n_expanded++;
 
         for (u_int64_t child : expand(current)) {
-            if (expansion_counts.find(child) != expansion_counts.end())
-                continue; // já visitado
+            if (visited.find(child) != visited.end())
+                continue;
 
-            expansion_counts[child] = g + 1;
+            visited[child] = {g + 1, visited[current].second + static_cast<u_int64_t>(manhattan_distance(child))};
 
             if (child == goal) {
                 auto end_time = std::chrono::high_resolution_clock::now();
@@ -494,8 +494,8 @@ bool Puzzle<BITS_GRID>::solve_gbfs(const u_int64_t& start) const {
                 double seconds = duration.count() / 1'000'000.0;
 
                 std::cout << "Solution found with GBFS:" << std::endl;
-                std::cout << n_expanded << "," << expansion_counts[child] << ","
-                          << seconds << "," << 0 << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
+                std::cout << n_expanded << "," << visited[child].first << ","
+                          << seconds << "," << float(visited[child].second) / visited[child].first << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
                 return true;
             }
 
