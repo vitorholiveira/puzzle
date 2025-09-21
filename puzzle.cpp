@@ -9,11 +9,11 @@ void Puzzle::solve(const std::string& algorithm) {
         if(algorithm == BFS) {
             solve_bfs(start);
         } else if (algorithm == IDFS) {
-            solve_idfs(start);
+            //solve_idfs(start);
         } else if (algorithm == ASTAR) {
-            solve_astar(start);
+            //solve_astar(start);
         } else if (algorithm == IDASTAR) {
-            solve_idastar(start);
+            //solve_idastar(start);
         } else if (algorithm == GBFS) {
             solve_gbfs(start);
         }
@@ -101,7 +101,7 @@ std::vector<u_int64_t> Puzzle::expand(const u_int64_t& state) const {
     return children;
 }
 
-u_int16_t Puzzle::manhattan_distance(const u_int64_t& state) const {
+u_int16_t Puzzle::manhattan_distance(const u_int64_t& state) {
     u_int16_t total = 0;
     int pos;
     for (pos = 0; pos < max_pos + 1; ++pos) {
@@ -122,13 +122,14 @@ u_int16_t Puzzle::manhattan_distance(const u_int64_t& state) const {
 /*
     PUZZLE SOLVERS
 */
-bool Puzzle::solve_bfs(const u_int64_t& start) const {
-    std::unordered_map<u_int64_t, u_int32_t> expansion_counts;
+bool Puzzle::solve_bfs(const u_int64_t& start) {
+    // Stores the g value of the already visited nodes
+    std::unordered_map<u_int64_t, u_int32_t> visited;
     std::queue<u_int64_t> frontier;
     u_int32_t n_expanded = 0;
 
     frontier.push(start);
-    expansion_counts[start] = 0;
+    visited[start] = 0;
 
     auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -136,8 +137,9 @@ bool Puzzle::solve_bfs(const u_int64_t& start) const {
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
         double seconds = duration.count() / 1'000'000.0;
+        int h_start = manhattan_distance(start);
 
-        std::cout << n_expanded << "," << expansion_counts[start] << "," << seconds << "," << 0 << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
+        std::cout << n_expanded << "," << visited[start] << "," << seconds << "," << 0 << "," << h_start << std::endl;
         return true;
     }
 
@@ -147,25 +149,21 @@ bool Puzzle::solve_bfs(const u_int64_t& start) const {
 
         n_expanded++;
 
-        //std::cout << "Exploring node:\n";
-        //print_state(current);
-
         // Expand neighbors
-        for (u_int64_t child : expand(current)) {
-            //std::cout << "Expanding to:\n";
-            //print_state(child);
+        for (const auto& child : expand(current)) {
             // If we already saw this child, skip
-            if (expansion_counts.find(child) != expansion_counts.end())
+            if (visited.find(child) != visited.end())
                 continue;
 
-            expansion_counts[child] = expansion_counts[current] + 1;
+            visited[child] = visited[current] + 1;
 
             if (child == goal) {
                 auto end_time = std::chrono::high_resolution_clock::now();
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
                 double seconds = duration.count() / 1'000'000.0;
+                int h_start = manhattan_distance(start);
 
-                std::cout << n_expanded << "," << expansion_counts[child] << "," << seconds << "," << 0 << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
+                std::cout << n_expanded << "," << visited[child] << "," << seconds << "," << 0 << "," << h_start << std::endl;
                 return true;
             }
 
@@ -176,208 +174,251 @@ bool Puzzle::solve_bfs(const u_int64_t& start) const {
     return false;
 }
 
-bool Puzzle::solve_idfs(const u_int64_t& start) const {
-    int n_expanded = 0;
-    auto start_time = std::chrono::high_resolution_clock::now();
+// bool Puzzle::solve_idfs(const u_int64_t& start) {
+//     int n_expanded = 0;
+//     auto start_time = std::chrono::high_resolution_clock::now();
 
-    for (int depth_limit = 0; depth_limit < 99999; depth_limit++) {
-        std::stack<std::tuple<u_int64_t, u_int16_t, size_t>> frontier;
-        std::unordered_map<u_int64_t, u_int64_t> parent_map;
-        std::unordered_set<u_int64_t> visited;
+//     for (int depth_limit = 0; depth_limit < 99999; depth_limit++) {
+//         std::stack<std::tuple<u_int64_t, u_int16_t, size_t>> frontier;
+//         std::unordered_map<u_int64_t, u_int64_t> parent_map;
+//         std::unordered_set<u_int64_t> visited;
         
-        frontier.push({start, 0, 0});
-        bool solution_found = false;
+//         frontier.push({start, 0, 0});
+//         bool solution_found = false;
 
-        while (!frontier.empty()) {
-            auto [current, depth, child_index] = frontier.top();
+//         while (!frontier.empty()) {
+//             auto [current, depth, child_index] = frontier.top();
             
-            if (child_index == 0) {
-                if (current == goal) {
-                    solution_found = true;
-                    break;
-                }
+//             if (child_index == 0) {
+//                 if (current == goal) {
+//                     solution_found = true;
+//                     break;
+//                 }
                 
-                if (visited.count(current) || depth >= depth_limit) {
-                    visited.erase(current);
-                    frontier.pop();
-                    continue;
-                }
+//                 if (visited.count(current) || depth >= depth_limit) {
+//                     visited.erase(current);
+//                     frontier.pop();
+//                     continue;
+//                 }
                 
-                visited.insert(current);
-                n_expanded++;
-            }
+//                 visited.insert(current);
+//                 n_expanded++;
+//             }
             
-            std::vector<u_int64_t> children = expand(current);
+//             std::vector<u_int64_t> children = expand(current);
             
-            if (child_index < children.size()) {
-                u_int64_t child = children[child_index];
-                std::get<2>(frontier.top()) = child_index + 1;
+//             if (child_index < children.size()) {
+//                 u_int64_t child = children[child_index];
+//                 std::get<2>(frontier.top()) = child_index + 1;
                 
-                if (visited.find(child) == visited.end()) {
-                    parent_map[child] = current;
-                    frontier.push({child, static_cast<u_int16_t>(depth + 1), 0});
-                }
-            } else {
-                visited.erase(current);
-                frontier.pop();
-            }
-        }
+//                 if (visited.find(child) == visited.end()) {
+//                     parent_map[child] = current;
+//                     frontier.push({child, static_cast<u_int16_t>(depth + 1), 0});
+//                 }
+//             } else {
+//                 visited.erase(current);
+//                 frontier.pop();
+//             }
+//         }
 
-        if (solution_found) {
-            // Reconstruir caminho e imprimir resultado
-            auto end_time = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-            double seconds = duration.count() / 1'000'000.0;
+//         if (solution_found) {
+//             // Reconstruir caminho e imprimir resultado
+//             auto end_time = std::chrono::high_resolution_clock::now();
+//             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+//             double seconds = duration.count() / 1'000'000.0;
 
-            std::vector<u_int64_t> path;
-            u_int64_t path_node = goal;
-            while (parent_map.count(path_node) && path_node != start) {
-                path.push_back(path_node);
-                path_node = parent_map[path_node];
-            }
-            path.push_back(start);
-            std::reverse(path.begin(), path.end());
+//             std::vector<u_int64_t> path;
+//             u_int64_t path_node = goal;
+//             while (parent_map.count(path_node) && path_node != start) {
+//                 path.push_back(path_node);
+//                 path_node = parent_map[path_node];
+//             }
+//             path.push_back(start);
+//             std::reverse(path.begin(), path.end());
 
-            std::cout << n_expanded << "," << path.size() - 1 << "," << seconds << "," << 0 << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
+//             std::cout << n_expanded << "," << path.size() - 1 << "," << seconds << "," << 0 << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
 
-            return true;
-        }
-    }
-    return false;
-}
+//             return true;
+//         }
+//     }
+//     return false;
+// }
 
-bool Puzzle::solve_astar(const u_int64_t& start) const {
-    // Elemento: (f, g, h, -ordem, estado, pai)
-    using Elem = std::tuple<u_int32_t,u_int32_t,u_int32_t,int,u_int64_t,u_int64_t>;
+// bool Puzzle::solve_astar(const u_int64_t& start) {
+//     std::unordered_map<u_int64_t, u_int32_t> heuristic_values;
+    
+//     // Priority queue with custom comparator for A*
+//     // Priority: min f-value, then min h-value, then LIFO (reverse insertion order)
+//     auto cmp = [this](const std::pair<u_int64_t, u_int32_t>& a, const std::pair<u_int64_t, u_int32_t>& b) {
+//         u_int32_t f_a = a.second + manhattan_distance(a.first);
+//         u_int32_t f_b = b.second + manhattan_distance(b.first);
+        
+//         if (f_a != f_b) {
+//             return f_a > f_b; // Min f-value (reverse for max-heap)
+//         }
+        
+//         u_int32_t h_a = manhattan_distance(a.first);
+//         u_int32_t h_b = manhattan_distance(b.first);
+        
+//         if (h_a != h_b) {
+//             return h_a > h_b; // Min h-value (reverse for max-heap)
+//         }
+        
+//         // LIFO - later inserted elements have higher priority
+//         // Since we can't track insertion order directly, we'll use the state value as a tiebreaker
+//         return a.first < b.first;
+//     };
+    
+//     std::priority_queue<std::pair<u_int64_t, u_int32_t>, 
+//                        std::vector<std::pair<u_int64_t, u_int32_t>>, 
+//                        decltype(cmp)> frontier(cmp);
+    
+//     std::unordered_map<u_int64_t, u_int64_t> prev;
+//     u_int32_t n_expanded = 0;
 
-    auto cmp = [](const Elem& a, const Elem& b) {
-        // priority_queue é max-heap, invertendo para min-heap
-        if (std::get<0>(a) != std::get<0>(b)) return std::get<0>(a) > std::get<0>(b); // menor f
-        if (std::get<1>(a) != std::get<1>(b)) return std::get<1>(a) > std::get<1>(b); // menor g
-        if (std::get<2>(a) != std::get<2>(b)) return std::get<2>(a) > std::get<2>(b); // menor h
-        return std::get<3>(a) > std::get<3>(b);                                      // LIFO (ordem negativa)
-    };
+//     //u_int64_t heuristic_sum = static_cast<u_int64_t>(manhattan_distance(start));
+//     //u_int32_t n_visited = 1;
 
-    std::priority_queue<Elem, std::vector<Elem>, decltype(cmp)> frontier(cmp);
-    std::unordered_map<u_int64_t, u_int32_t> g_score;
+//     frontier.push({start, 0});
+//     expansion_counts[start] = 0;
 
-    u_int32_t n_expanded = 0;
-    int order = 0;
+//     auto start_time = std::chrono::high_resolution_clock::now();
 
-    u_int32_t h_start = static_cast<u_int32_t>(manhattan_distance(start));
-    frontier.push({h_start, 0, h_start, -order++, start, 0ULL});
-    g_score[start] = 0;
+//     if (start == goal) {
+//         auto end_time = std::chrono::high_resolution_clock::now();
+//         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+//         double seconds = duration.count() / 1'000'000.0;
+//         float h_avg = float(heuristic_sum) / heuristic_count;
+//         int h_start = static_cast<int>(manhattan_distance(start));
 
-    auto start_time = std::chrono::high_resolution_clock::now();
+//         std::cout << n_expanded << "," << expansion_counts[start] << "," << seconds << "," << h_avg << "," << h_start << std::endl;
+//         return true;
+//     }
 
-    if (start == goal) {
-        auto end_time = std::chrono::high_resolution_clock::now();
-        double seconds = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count() / 1'000'000.0;
-        std::cout << n_expanded << "," << 0 << "," << seconds << "," << 0 << "," << h_start << std::endl;
-        return true;
-    }
+//     bool found_solution = false;
 
-    while (!frontier.empty()) {
-        auto [f, g, h, neg_order, state, parent] = frontier.top();
-        frontier.pop();
-        n_expanded++;
+//     while (!found_solution) {
+//         auto current_pair = frontier.top();
+//         frontier.pop();
+        
+//         u_int64_t current = current_pair.first;
+//         u_int32_t g_cost = current_pair.second;
+        
+//         n_expanded++;
 
-        if (state == goal) {
-            auto end_time = std::chrono::high_resolution_clock::now();
-            double seconds = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count() / 1'000'000.0;
-            std::cout << n_expanded << "," << g << "," << seconds << "," << f << "," << h_start << std::endl;
-            return true;
-        }
+//         // Skip if we've already found a better path to this state
+//         if (expansion_counts.find(current) != expansion_counts.end() && expansion_counts[current] < g_cost) {
+//             continue;
+//         }
 
-        for (u_int64_t child : expand(state)) {
-            if (child == parent) continue; // *** evita gerar o pai ***
+//         //std::cout << "Exploring node:\n";
+//         //print_state(current);
 
-            u_int32_t g_child = g + 1;
-            auto it = g_score.find(child);
-            if (it != g_score.end() && g_child >= it->second) continue;
+//         // Expand neighbors
+//         for (const auto& child : expand(current)) {
+//             //std::cout << "Expanding to:\n";
+//             //print_state(child);
+//             u_int32_t new_g_cost = g_cost + 1;
+            
+//             // Skip if we already found a better path to this child
+//             if (expansion_counts.find(child) != expansion_counts.end() && expansion_counts[child] <= new_g_cost) {
+//                 continue;
+//             }
 
-            g_score[child] = g_child;
-            u_int32_t h_child = static_cast<u_int32_t>(manhattan_distance(child));
-            frontier.push({g_child + h_child, g_child, h_child, -order++, child, state});
-        }
-    }
-    return false;
-}
+//             expansion_counts[child] = new_g_cost;
 
-bool Puzzle::solve_idastar(const u_int64_t& start) const {
-    struct Frame {
-        u_int64_t state;
-        int g;
-        int h;
-        size_t child_index;
-        std::vector<u_int64_t> children;
-    };
+//             if (child == goal) found_solution = true;
 
-    auto start_time = std::chrono::high_resolution_clock::now();
+//             frontier.push({child, new_g_cost});
+//         }
+//     }
 
-    int bound = manhattan_distance(start);
+//     if (found_solution) {
+//         auto end_time = std::chrono::high_resolution_clock::now();
+//         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+//         double seconds = duration.count() / 1'000'000.0;
+//         int h_start = static_cast<int>(manhattan_distance(start));
+//         float h_avg = float(heuristic_sum) / heuristic_count;
 
-    while (true) {
-        u_int32_t n_expanded = 0;
-        double h_sum = 0.0;
-        int min_cutoff = std::numeric_limits<int>::max();
+//         std::cout << n_expanded << "," << expansion_counts[goal] << "," << seconds << "," << h_avg << "," << h_start << std::endl;
+//         return true;
+//     }
+//     return false;
+// }
 
-        std::stack<Frame> stack;
-        stack.push({start, 0, manhattan_distance(start), 0, {}});
+// bool Puzzle::solve_idastar(const u_int64_t& start) {
+//     struct Frame {
+//         u_int64_t state;
+//         int g;
+//         int h;
+//         size_t child_index;
+//         std::vector<u_int64_t> children;
+//     };
 
-        while (!stack.empty()) {
-            Frame &node = stack.top();
-            int f = node.g + node.h;
+//     auto start_time = std::chrono::high_resolution_clock::now();
 
-            // Cutoff check
-            if (f > bound) {
-                if (f < min_cutoff) min_cutoff = f;
-                stack.pop();
-                continue;
-            }
+//     int bound = manhattan_distance(start);
 
-            // Expansion counting (only first time we see the node)
-            if (node.child_index == 0) {
-                n_expanded++;
-                h_sum += node.h;
-            }
+//     while (true) {
+//         u_int32_t n_expanded = 0;
+//         double h_sum = 0.0;
+//         int min_cutoff = std::numeric_limits<int>::max();
 
-            // Goal check
-            if (node.state == goal) {
-                auto end_time = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-                double seconds = duration.count() / 1'000'000.0;
-                double avg_h = (n_expanded > 0) ? (h_sum / n_expanded) : 0.0;
+//         std::stack<Frame> stack;
+//         stack.push({start, 0, manhattan_distance(start), 0, {}});
 
-                std::cout << n_expanded << "," << node.g << "," << seconds << "," << avg_h << "," << manhattan_distance(start) << std::endl;
-                return true;
-            }
+//         while (!stack.empty()) {
+//             Frame &node = stack.top();
+//             int f = node.g + node.h;
 
-            // Expand children lazily
-            if (node.children.empty()) {
-                node.children = expand(node.state);
-            }
+//             // Cutoff check
+//             if (f > bound) {
+//                 if (f < min_cutoff) min_cutoff = f;
+//                 stack.pop();
+//                 continue;
+//             }
 
-            if (node.child_index < node.children.size()) {
-                u_int64_t child = node.children[node.child_index++];
-                int h_child = manhattan_distance(child);
-                stack.push({child, node.g + 1, h_child, 0, {}});
-            } else {
-                stack.pop();
-            }
-        }
+//             // Expansion counting (only first time we see the node)
+//             if (node.child_index == 0) {
+//                 n_expanded++;
+//                 h_sum += node.h;
+//             }
 
-        if (min_cutoff == std::numeric_limits<int>::max()) {
-            return false;
-        }
+//             // Goal check
+//             if (node.state == goal) {
+//                 auto end_time = std::chrono::high_resolution_clock::now();
+//                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+//                 double seconds = duration.count() / 1'000'000.0;
+//                 double avg_h = (n_expanded > 0) ? (h_sum / n_expanded) : 0.0;
 
-        bound = min_cutoff; // increase cutoff
-    }
-}
+//                 std::cout << n_expanded << "," << node.g << "," << seconds << "," << avg_h << "," << manhattan_distance(start) << std::endl;
+//                 return true;
+//             }
 
-bool Puzzle::solve_gbfs(const u_int64_t& start) const {
-    // expansion_counts guarda o g (número de passos até o nó)
-    std::unordered_map<u_int64_t, u_int32_t> visited;
+//             // Expand children lazily
+//             if (node.children.empty()) {
+//                 node.children = expand(node.state);
+//             }
+
+//             if (node.child_index < node.children.size()) {
+//                 u_int64_t child = node.children[node.child_index++];
+//                 int h_child = manhattan_distance(child);
+//                 stack.push({child, node.g + 1, h_child, 0, {}});
+//             } else {
+//                 stack.pop();
+//             }
+//         }
+
+//         if (min_cutoff == std::numeric_limits<int>::max()) {
+//             return false;
+//         }
+
+//         bound = min_cutoff; // increase cutoff
+//     }
+// }
+
+bool Puzzle::solve_gbfs(const u_int64_t& start) {
+    std::unordered_set<u_int64_t> visited;
     u_int32_t n_expanded = 0;
     u_int64_t insertion_order = 0; // controla o desempate LIFO
 
@@ -392,27 +433,24 @@ bool Puzzle::solve_gbfs(const u_int64_t& start) const {
         return std::get<2>(a) < std::get<2>(b);
     };
 
-    std::priority_queue<
-        std::tuple<u_int64_t,u_int32_t,u_int64_t>, // estado, g, ordem
-        std::vector<std::tuple<u_int64_t,u_int32_t,u_int64_t>>,
-        decltype(cmp)
-    > frontier(cmp);
+    std::priority_queue<std::tuple<u_int64_t,u_int32_t,u_int64_t>, // estado, g, ordem
+                        std::vector<std::tuple<u_int64_t,u_int32_t,u_int64_t>>,
+                        decltype(cmp)> frontier(cmp);
+
+    std::tuple<u_int64_t,u_int32_t,u_int64_t> final_state;
 
     auto start_time = std::chrono::high_resolution_clock::now();
-    u_int64_t heuristic_sum = static_cast<u_int64_t>(manhattan_distance(start));
-    int n_visited = 1;
 
     // nó inicial
-    visited[start] = 0;
     frontier.push({start, 0, insertion_order++});
 
     if (start == goal) {
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
         double seconds = duration.count() / 1'000'000.0;
+        int h_start = static_cast<int>(manhattan_distance(start));
 
-        std::cout << n_expanded << "," << 0 << "," << seconds << "," << 0
-                  << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
+        std::cout << n_expanded << "," << 0 << "," << seconds << "," << h_start << "," << h_start << std::endl;
         return true;
     }
     bool found_solution = false;
@@ -420,39 +458,34 @@ bool Puzzle::solve_gbfs(const u_int64_t& start) const {
     while (!found_solution) {
         auto [current, g, order] = frontier.top();
         frontier.pop();
-        // std::cout << "==> Exploring node:\n";
-        // print_state(current);
-
         n_expanded++;
-
         for (u_int64_t child : expand(current)) {
             if (visited.find(child) != visited.end())
                 continue;
-
-
-            heuristic_sum += static_cast<u_int64_t>(manhattan_distance(child));
-            n_visited++;
-            
-            // std::cout << "Expanding to:\n";
-            // print_state(child);
-            // std::cout << "heuristic avg: " << float(heuristic_sum) / n_visited << std::endl;
-
-            visited[child] = g + 1;
-
-            if (child == goal) found_solution = true;
-
+            visited.insert(child);
+            if (child == goal) {
+                found_solution = true;
+                final_state = {child, g + 1, insertion_order++};
+            }
             frontier.push({child, g + 1, insertion_order++});
         }
     }
+
     if(found_solution){
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
         double seconds = duration.count() / 1'000'000.0;
+        u_int64_t h_start = static_cast<u_int64_t>(manhattan_distance(start));
+        u_int64_t heuristic_sum = 0;
+        for (const auto &state : visited) {
+            heuristic_sum += static_cast<u_int64_t>(manhattan_distance(state));
+        }
 
-        std::cout << n_expanded << "," << visited[goal] << ","
-                    << seconds << "," << float(heuristic_sum) / n_visited << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
+        std::cout << n_expanded << "," << std::get<1>(final_state) << "," << seconds << "," << float(heuristic_sum) / visited.size() << "," << h_start << std::endl;
         return true;
     }
 
     return false;
 }
+
+

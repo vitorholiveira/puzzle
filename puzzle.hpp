@@ -28,10 +28,26 @@ constexpr int MOVE_DOWN_8 = -3;
 constexpr int MOVE_UP_15  = 4;
 constexpr int MOVE_DOWN_15 = -4;
 
+struct SearchStatistics {
+    u_int32_t expanded = 0;
+    u_int32_t solution_depth = 0;
+    double elapsed_seconds = 0.0;
+    double avg_heuristic = 0.0;
+    u_int32_t start_heuristic = 0;
+
+    void print() const {
+        std::cout << expanded << ","
+                  << solution_depth << ","
+                  << elapsed_seconds << ","
+                  << avg_heuristic << ","
+                  << start_heuristic << std::endl;
+    }
+};
+
 class Puzzle {
 public:
     Puzzle(const std::vector<std::vector<int>>& initial_states)
-        : states(initial_states) {
+        : heuristic_count(0), heuristic_sum(0), states(initial_states) {
         int num_tiles = initial_states[0].size();
         bool is_8_puzzle = (num_tiles == 9);
         max_pos = is_8_puzzle ? 8 : 15;
@@ -41,22 +57,20 @@ public:
     void solve(const std::string& algorithm);
 
 private:
-    bool solve_bfs(const u_int64_t& start) const;
-    bool solve_idfs(const u_int64_t& start) const;
-    bool solve_astar(const u_int64_t& start) const;
-    bool solve_idastar(const u_int64_t& start) const;
-    bool solve_gbfs(const u_int64_t& start) const;
-    bool dls_recursive(const u_int64_t& state, int depth_limit, int current_depth,
-                       std::unordered_map<u_int64_t, u_int64_t>& parent_map,
-                       std::unordered_set<u_int64_t>& visited,
-                       int& n_expanded) const;
+    bool solve_bfs(const u_int64_t& start);
+    bool solve_idfs(const u_int64_t& start);
+    bool solve_astar(const u_int64_t& start);
+    bool solve_idastar(const u_int64_t& start);
+    bool solve_gbfs(const u_int64_t& start);
 
     int max_pos;
     int grid_size;
     u_int64_t goal;
+    u_int16_t heuristic_count;
+    u_int64_t heuristic_sum;
 
     std::vector<std::vector<int>> states;
-    u_int16_t manhattan_distance(const u_int64_t& state) const;
+    u_int16_t manhattan_distance(const u_int64_t& state);
 
     u_int64_t create_goal_state() const;
     u_int64_t vector_to_state(const std::vector<int>& grid_vec) const;
