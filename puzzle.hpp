@@ -21,9 +21,6 @@
 
 constexpr int TILE_BITS = 4;
 
-constexpr size_t BITS_GRID_8 = 36;   // 9 tiles * 4 bits
-constexpr size_t BITS_GRID_15 = 64;  // 16 tiles * 4 bits
-
 constexpr int MOVE_LEFT  = -1;
 constexpr int MOVE_RIGHT = 1;
 constexpr int MOVE_UP_8  = 3;
@@ -31,12 +28,12 @@ constexpr int MOVE_DOWN_8 = -3;
 constexpr int MOVE_UP_15  = 4;
 constexpr int MOVE_DOWN_15 = -4;
 
-template <size_t BITS_GRID>
 class Puzzle {
 public:
-    explicit Puzzle(const std::vector<std::vector<int>>& initial_states)
+    Puzzle(const std::vector<std::vector<int>>& initial_states)
         : states(initial_states) {
-        bool is_8_puzzle = (BITS_GRID == BITS_GRID_8);
+        int num_tiles = initial_states[0].size();
+        bool is_8_puzzle = (num_tiles == 9);
         max_pos = is_8_puzzle ? 8 : 15;
         grid_size = is_8_puzzle ? 3 : 4;
     }

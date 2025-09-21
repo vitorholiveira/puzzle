@@ -1,8 +1,7 @@
 #include "puzzle.hpp"
 
 // OK
-template<size_t BITS_GRID>
-void Puzzle<BITS_GRID>::solve(const std::string& algorithm) {
+void Puzzle::solve(const std::string& algorithm) {
     goal = create_goal_state();
     for(const auto& state : states) {
         if(static_cast<int>(state.size()) != max_pos + 1) continue;
@@ -25,8 +24,7 @@ void Puzzle<BITS_GRID>::solve(const std::string& algorithm) {
     UTILS
 */
 
-template<size_t BITS_GRID>
-u_int64_t Puzzle<BITS_GRID>::vector_to_state(const std::vector<int>& v) const {
+u_int64_t Puzzle::vector_to_state(const std::vector<int>& v) const {
     u_int64_t state = 0;
     for (size_t pos = 0; pos < v.size(); ++pos) {
         u_int64_t tile = static_cast<u_int64_t>(v[pos]) & 0xF; // 4 bits
@@ -36,8 +34,7 @@ u_int64_t Puzzle<BITS_GRID>::vector_to_state(const std::vector<int>& v) const {
 }
 
 // Goal state: tiles [0,1,2,3,4,5,6,7,8]
-template<size_t BITS_GRID>
-u_int64_t Puzzle<BITS_GRID>::create_goal_state() const {
+u_int64_t Puzzle::create_goal_state() const {
     u_int64_t goal = 0;
     for (u_int8_t pos = 0; pos < max_pos + 1; ++pos) {
         goal |= (static_cast<u_int64_t>(pos) << (pos * 4));
@@ -45,8 +42,7 @@ u_int64_t Puzzle<BITS_GRID>::create_goal_state() const {
     return goal;
 }
 
-template<size_t BITS_GRID>
-void Puzzle<BITS_GRID>::print_state(const u_int64_t& state) const {
+void Puzzle::print_state(const u_int64_t& state) const {
     u_int64_t tile;
     for (u_int8_t pos = 0; pos < max_pos + 1; ++pos) {
         if((pos % grid_size) == 0)
@@ -57,8 +53,7 @@ void Puzzle<BITS_GRID>::print_state(const u_int64_t& state) const {
     std::cout << std::endl << "--------" << std::endl;
 }
 
-template<size_t BITS_GRID>
-std::vector<u_int64_t> Puzzle<BITS_GRID>::expand(const u_int64_t& state) const {
+std::vector<u_int64_t> Puzzle::expand(const u_int64_t& state) const {
     std::vector<u_int64_t> children;
 
     int blank_pos = -1;
@@ -106,8 +101,7 @@ std::vector<u_int64_t> Puzzle<BITS_GRID>::expand(const u_int64_t& state) const {
     return children;
 }
 
-template<size_t BITS_GRID>
-u_int16_t Puzzle<BITS_GRID>::manhattan_distance(const u_int64_t& state) const {
+u_int16_t Puzzle::manhattan_distance(const u_int64_t& state) const {
     u_int16_t total = 0;
     int pos;
     for (pos = 0; pos < max_pos + 1; ++pos) {
@@ -121,17 +115,14 @@ u_int16_t Puzzle<BITS_GRID>::manhattan_distance(const u_int64_t& state) const {
 
 
         total += static_cast<u_int16_t>(std::abs(cur_row - goal_row) + std::abs(cur_col - goal_col));
-        //std::cout << std::endl << "tile: " << static_cast<int>(tile) << " pos: " << static_cast<int>(pos) << " h = " << std::abs(cur_row - goal_row) + std::abs(cur_col - goal_col) << std::endl;
     }
-    //std::cout << "total: " << total << " pos: " << pos << std::endl;
     return total;
 }
 
 /*
     PUZZLE SOLVERS
 */
-template<size_t BITS_GRID>
-bool Puzzle<BITS_GRID>::solve_bfs(const u_int64_t& start) const {
+bool Puzzle::solve_bfs(const u_int64_t& start) const {
     std::unordered_map<u_int64_t, u_int32_t> expansion_counts;
     std::queue<u_int64_t> frontier;
     u_int32_t n_expanded = 0;
@@ -146,7 +137,6 @@ bool Puzzle<BITS_GRID>::solve_bfs(const u_int64_t& start) const {
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
         double seconds = duration.count() / 1'000'000.0;
 
-        std::cout << "Solution found with BFS:" << std::endl;
         std::cout << n_expanded << "," << expansion_counts[start] << "," << seconds << "," << 0 << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
         return true;
     }
@@ -175,7 +165,6 @@ bool Puzzle<BITS_GRID>::solve_bfs(const u_int64_t& start) const {
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
                 double seconds = duration.count() / 1'000'000.0;
 
-                std::cout << "Solution found with BFS:" << std::endl;
                 std::cout << n_expanded << "," << expansion_counts[child] << "," << seconds << "," << 0 << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
                 return true;
             }
@@ -184,12 +173,10 @@ bool Puzzle<BITS_GRID>::solve_bfs(const u_int64_t& start) const {
         }
     }
 
-    std::cout << "Nenhuma solução encontrada.\n";
     return false;
 }
 
-template<size_t BITS_GRID>
-bool Puzzle<BITS_GRID>::solve_idfs(const u_int64_t& start) const {
+bool Puzzle::solve_idfs(const u_int64_t& start) const {
     int n_expanded = 0;
     auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -251,18 +238,15 @@ bool Puzzle<BITS_GRID>::solve_idfs(const u_int64_t& start) const {
             path.push_back(start);
             std::reverse(path.begin(), path.end());
 
-            std::cout << "Solution found with IDFS:" << std::endl;
-            std::cout << n_expanded << "," << path.size() - 1 << "," << seconds << std::endl;
+            std::cout << n_expanded << "," << path.size() - 1 << "," << seconds << "," << 0 << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
+
             return true;
         }
     }
-
-    std::cout << "No solution found.\n";
     return false;
 }
 
-template<size_t BITS_GRID>
-bool Puzzle<BITS_GRID>::solve_astar(const u_int64_t& start) const {
+bool Puzzle::solve_astar(const u_int64_t& start) const {
     // Elemento: (f, g, h, -ordem, estado, pai)
     using Elem = std::tuple<u_int32_t,u_int32_t,u_int32_t,int,u_int64_t,u_int64_t>;
 
@@ -289,7 +273,6 @@ bool Puzzle<BITS_GRID>::solve_astar(const u_int64_t& start) const {
     if (start == goal) {
         auto end_time = std::chrono::high_resolution_clock::now();
         double seconds = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count() / 1'000'000.0;
-        std::cout << "Solution found with A*:\n";
         std::cout << n_expanded << "," << 0 << "," << seconds << "," << 0 << "," << h_start << std::endl;
         return true;
     }
@@ -302,7 +285,6 @@ bool Puzzle<BITS_GRID>::solve_astar(const u_int64_t& start) const {
         if (state == goal) {
             auto end_time = std::chrono::high_resolution_clock::now();
             double seconds = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count() / 1'000'000.0;
-            std::cout << "Solution found with A*:\n";
             std::cout << n_expanded << "," << g << "," << seconds << "," << f << "," << h_start << std::endl;
             return true;
         }
@@ -319,13 +301,10 @@ bool Puzzle<BITS_GRID>::solve_astar(const u_int64_t& start) const {
             frontier.push({g_child + h_child, g_child, h_child, -order++, child, state});
         }
     }
-
-    std::cout << "Nenhuma solução encontrada.\n";
     return false;
 }
 
-template<size_t BITS_GRID>
-bool Puzzle<BITS_GRID>::solve_idastar(const u_int64_t& start) const {
+bool Puzzle::solve_idastar(const u_int64_t& start) const {
     struct Frame {
         u_int64_t state;
         int g;
@@ -370,7 +349,6 @@ bool Puzzle<BITS_GRID>::solve_idastar(const u_int64_t& start) const {
                 double seconds = duration.count() / 1'000'000.0;
                 double avg_h = (n_expanded > 0) ? (h_sum / n_expanded) : 0.0;
 
-                std::cout << "Solution found with IDA*:" << std::endl;
                 std::cout << n_expanded << "," << node.g << "," << seconds << "," << avg_h << "," << manhattan_distance(start) << std::endl;
                 return true;
             }
@@ -390,7 +368,6 @@ bool Puzzle<BITS_GRID>::solve_idastar(const u_int64_t& start) const {
         }
 
         if (min_cutoff == std::numeric_limits<int>::max()) {
-            std::cout << "Nenhuma solução encontrada.\n";
             return false;
         }
 
@@ -398,8 +375,7 @@ bool Puzzle<BITS_GRID>::solve_idastar(const u_int64_t& start) const {
     }
 }
 
-template<size_t BITS_GRID>
-bool Puzzle<BITS_GRID>::solve_gbfs(const u_int64_t& start) const {
+bool Puzzle::solve_gbfs(const u_int64_t& start) const {
     // expansion_counts guarda o g (número de passos até o nó) e f (valor da heurística)
     std::unordered_map<u_int64_t, std::pair<u_int32_t,u_int64_t>> visited;
     u_int32_t n_expanded = 0;
@@ -423,6 +399,8 @@ bool Puzzle<BITS_GRID>::solve_gbfs(const u_int64_t& start) const {
     > frontier(cmp);
 
     auto start_time = std::chrono::high_resolution_clock::now();
+    u_int64_t heuristic_sum = static_cast<u_int64_t>(manhattan_distance(start));
+    int n_visited = 1;
 
     // nó inicial
     visited[start] = {0, static_cast<u_int64_t>(manhattan_distance(start))};
@@ -433,42 +411,41 @@ bool Puzzle<BITS_GRID>::solve_gbfs(const u_int64_t& start) const {
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
         double seconds = duration.count() / 1'000'000.0;
 
-        std::cout << "Solution found with GBFS:" << std::endl;
         std::cout << n_expanded << "," << 0 << "," << seconds << "," << 0
                   << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
         return true;
     }
+    bool found_solution = false;
 
-    while (!frontier.empty()) {
+    while (!found_solution) {
         auto [current, g, order] = frontier.top();
         frontier.pop();
+
         n_expanded++;
 
         for (u_int64_t child : expand(current)) {
             if (visited.find(child) != visited.end())
                 continue;
 
+            heuristic_sum += static_cast<u_int64_t>(manhattan_distance(child));
+            n_visited++;
+
             visited[child] = {g + 1, visited[current].second + static_cast<u_int64_t>(manhattan_distance(child))};
 
-            if (child == goal) {
-                auto end_time = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-                double seconds = duration.count() / 1'000'000.0;
-
-                std::cout << "Solution found with GBFS:" << std::endl;
-                std::cout << n_expanded << "," << visited[child].first << ","
-                          << seconds << "," << float(visited[child].second) / visited[child].first << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
-                return true;
-            }
+            if (child == goal) found_solution = true;
 
             frontier.push({child, g + 1, insertion_order++});
         }
     }
+    if(found_solution){
+        auto end_time = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+        double seconds = duration.count() / 1'000'000.0;
 
-    std::cout << "Nenhuma solução encontrada.\n";
+        std::cout << n_expanded << "," << visited[goal].first << ","
+                    << seconds << "," << float(heuristic_sum) / n_visited << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
+        return true;
+    }
+
     return false;
 }
-
-// --- Explicit instantiations (required if you use .cpp for templates) ---
-template class Puzzle<BITS_GRID_8>;
-template class Puzzle<BITS_GRID_15>;
