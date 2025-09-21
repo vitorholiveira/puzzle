@@ -9,7 +9,7 @@ void Puzzle::solve(const std::string& algorithm) {
         if(algorithm == BFS) {
             solve_bfs(start);
         } else if (algorithm == IDFS) {
-            //solve_idfs(start);
+            solve_idfs(start);
         } else if (algorithm == ASTAR) {
             solve_astar(start);
         } else if (algorithm == IDASTAR) {
@@ -185,7 +185,6 @@ bool Puzzle::solve_idfs(const u_int64_t& start) {
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
         double seconds = duration.count() / 1'000'000.0;
         
-        std::cout << "Solution found with IDFS:" << std::endl;
         std::cout << n_expanded << "," << 0 << "," << seconds << "," << 0 << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
         return true;
     }
@@ -200,7 +199,6 @@ bool Puzzle::solve_idfs(const u_int64_t& start) {
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
             double seconds = duration.count() / 1'000'000.0;
             
-            std::cout << "Solution found with IDFS:" << std::endl;
             std::cout << n_expanded << "," << solution_depth << "," << seconds << "," << 0 << "," << static_cast<int>(manhattan_distance(start)) << std::endl;
             return true;
         }
@@ -210,7 +208,6 @@ bool Puzzle::solve_idfs(const u_int64_t& start) {
         }
     }
     
-    std::cout << "Nenhuma solução encontrada.\n";
     return false;
 }
 
