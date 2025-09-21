@@ -47,7 +47,7 @@ struct SearchStatistics {
 class Puzzle {
 public:
     Puzzle(const std::vector<std::vector<int>>& initial_states)
-        : heuristic_count(0), heuristic_sum(0), states(initial_states) {
+        : states(initial_states) {
         int num_tiles = initial_states[0].size();
         bool is_8_puzzle = (num_tiles == 9);
         max_pos = is_8_puzzle ? 8 : 15;
@@ -66,8 +66,6 @@ private:
     int max_pos;
     int grid_size;
     u_int64_t goal;
-    u_int16_t heuristic_count;
-    u_int64_t heuristic_sum;
 
     std::vector<std::vector<int>> states;
     u_int16_t manhattan_distance(const u_int64_t& state);

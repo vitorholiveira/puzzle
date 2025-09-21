@@ -11,7 +11,7 @@ void Puzzle::solve(const std::string& algorithm) {
         } else if (algorithm == IDFS) {
             //solve_idfs(start);
         } else if (algorithm == ASTAR) {
-            //solve_astar(start);
+            solve_astar(start);
         } else if (algorithm == IDASTAR) {
             //solve_idastar(start);
         } else if (algorithm == GBFS) {
@@ -244,107 +244,79 @@ bool Puzzle::solve_bfs(const u_int64_t& start) {
 //     return false;
 // }
 
-// bool Puzzle::solve_astar(const u_int64_t& start) {
-//     std::unordered_map<u_int64_t, u_int32_t> heuristic_values;
-    
-//     // Priority queue with custom comparator for A*
-//     // Priority: min f-value, then min h-value, then LIFO (reverse insertion order)
-//     auto cmp = [this](const std::pair<u_int64_t, u_int32_t>& a, const std::pair<u_int64_t, u_int32_t>& b) {
-//         u_int32_t f_a = a.second + manhattan_distance(a.first);
-//         u_int32_t f_b = b.second + manhattan_distance(b.first);
-        
-//         if (f_a != f_b) {
-//             return f_a > f_b; // Min f-value (reverse for max-heap)
-//         }
-        
-//         u_int32_t h_a = manhattan_distance(a.first);
-//         u_int32_t h_b = manhattan_distance(b.first);
-        
-//         if (h_a != h_b) {
-//             return h_a > h_b; // Min h-value (reverse for max-heap)
-//         }
-        
-//         // LIFO - later inserted elements have higher priority
-//         // Since we can't track insertion order directly, we'll use the state value as a tiebreaker
-//         return a.first < b.first;
-//     };
-    
-//     std::priority_queue<std::pair<u_int64_t, u_int32_t>, 
-//                        std::vector<std::pair<u_int64_t, u_int32_t>>, 
-//                        decltype(cmp)> frontier(cmp);
-    
-//     std::unordered_map<u_int64_t, u_int64_t> prev;
-//     u_int32_t n_expanded = 0;
+bool Puzzle::solve_astar(const u_int64_t& start) {
+    using Node = std::tuple<u_int64_t, u_int32_t, u_int64_t>; // state, g, insertion order
+    std::unordered_map<u_int64_t, u_int64_t> parent;          // for path reconstruction
+    std::unordered_map<u_int64_t, u_int32_t> g_score;         // best g found so far (discovered nodes)
+    std::unordered_set<u_int64_t> closed;                     // expanded states
+    u_int32_t n_expanded = 0;
+    u_int64_t insertion_order = 0;
 
-//     //u_int64_t heuristic_sum = static_cast<u_int64_t>(manhattan_distance(start));
-//     //u_int32_t n_visited = 1;
+    // Priority by f = g + h, then lower h, then LIFO
+    auto cmp = [&](const Node& a, const Node& b) {
+        auto f = [&](const Node& n) {
+            return std::get<1>(n) + (u_int32_t)manhattan_distance(std::get<0>(n));
+        };
+        u_int32_t f_a = f(a), f_b = f(b);
+        if (f_a != f_b) return f_a > f_b;                     // lower f first
+        u_int32_t h_a = (u_int32_t)manhattan_distance(std::get<0>(a));
+        u_int32_t h_b = (u_int32_t)manhattan_distance(std::get<0>(b));
+        if (h_a != h_b) return h_a > h_b;                     // then lower h
+        return std::get<2>(a) < std::get<2>(b);               // then newer first (LIFO)
+    };
 
-//     frontier.push({start, 0});
-//     expansion_counts[start] = 0;
+    std::priority_queue<Node, std::vector<Node>, decltype(cmp)> frontier(cmp);
 
-//     auto start_time = std::chrono::high_resolution_clock::now();
+    auto start_time = std::chrono::high_resolution_clock::now();
 
-//     if (start == goal) {
-//         auto end_time = std::chrono::high_resolution_clock::now();
-//         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-//         double seconds = duration.count() / 1'000'000.0;
-//         float h_avg = float(heuristic_sum) / heuristic_count;
-//         int h_start = static_cast<int>(manhattan_distance(start));
+    // initialize
+    g_score[start] = 0;
+    parent[start]  = start;
+    frontier.push({start, 0, insertion_order++});
 
-//         std::cout << n_expanded << "," << expansion_counts[start] << "," << seconds << "," << h_avg << "," << h_start << std::endl;
-//         return true;
-//     }
+    while (!frontier.empty()) {
+        auto [current, g, order] = frontier.top();
+        frontier.pop();
 
-//     bool found_solution = false;
+        if (closed.count(current)) continue;  // already expanded with best cost
+        closed.insert(current);
 
-//     while (!found_solution) {
-//         auto current_pair = frontier.top();
-//         frontier.pop();
-        
-//         u_int64_t current = current_pair.first;
-//         u_int32_t g_cost = current_pair.second;
-        
-//         n_expanded++;
+        // Goal test when popping ensures optimality
+        if (current == goal) {
+            auto end_time = std::chrono::high_resolution_clock::now();
+            double seconds = std::chrono::duration_cast<std::chrono::microseconds>(
+                                  end_time - start_time).count() / 1'000'000.0;
 
-//         // Skip if we've already found a better path to this state
-//         if (expansion_counts.find(current) != expansion_counts.end() && expansion_counts[current] < g_cost) {
-//             continue;
-//         }
+            // average heuristic over all discovered nodes (keys in g_score)
+            double avg_h = 0.0;
+            if (!g_score.empty()) {
+                unsigned long long heuristic_sum = 0ULL;
+                for (const auto &p : g_score) {
+                    heuristic_sum += static_cast<u_int64_t>(manhattan_distance(p.first));
+                }
+                avg_h = double(heuristic_sum) / double(g_score.size());
+            }
 
-//         //std::cout << "Exploring node:\n";
-//         //print_state(current);
+            u_int32_t h_start = static_cast<u_int32_t>(manhattan_distance(start));
+            std::cout << n_expanded << "," << g << "," << seconds << "," << avg_h << "," << h_start << std::endl;
+            return true;
+        }
 
-//         // Expand neighbors
-//         for (const auto& child : expand(current)) {
-//             //std::cout << "Expanding to:\n";
-//             //print_state(child);
-//             u_int32_t new_g_cost = g_cost + 1;
-            
-//             // Skip if we already found a better path to this child
-//             if (expansion_counts.find(child) != expansion_counts.end() && expansion_counts[child] <= new_g_cost) {
-//                 continue;
-//             }
+        n_expanded++;
 
-//             expansion_counts[child] = new_g_cost;
+        for (const auto& child : expand(current)) {
+            u_int32_t g_new = g + 1;
+            if (!g_score.count(child) || g_new < g_score[child]) {
+                g_score[child] = g_new;
+                parent[child]  = current;
+                frontier.push({child, g_new, insertion_order++});
+            }
+        }
+    }
 
-//             if (child == goal) found_solution = true;
+    return false; // no solution
+}
 
-//             frontier.push({child, new_g_cost});
-//         }
-//     }
-
-//     if (found_solution) {
-//         auto end_time = std::chrono::high_resolution_clock::now();
-//         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-//         double seconds = duration.count() / 1'000'000.0;
-//         int h_start = static_cast<int>(manhattan_distance(start));
-//         float h_avg = float(heuristic_sum) / heuristic_count;
-
-//         std::cout << n_expanded << "," << expansion_counts[goal] << "," << seconds << "," << h_avg << "," << h_start << std::endl;
-//         return true;
-//     }
-//     return false;
-// }
 
 // bool Puzzle::solve_idastar(const u_int64_t& start) {
 //     struct Frame {
@@ -418,13 +390,14 @@ bool Puzzle::solve_bfs(const u_int64_t& start) {
 // }
 
 bool Puzzle::solve_gbfs(const u_int64_t& start) {
+    using Node = std::tuple<u_int64_t, u_int32_t, u_int64_t>; // state, g, insertion order
     std::unordered_set<u_int64_t> visited;
     u_int32_t n_expanded = 0;
     u_int64_t insertion_order = 0; // controla o desempate LIFO
 
     // Comparador para priority_queue
-    auto cmp = [&](const std::tuple<u_int64_t,u_int32_t,u_int64_t>& a,
-        const std::tuple<u_int64_t,u_int32_t,u_int64_t>& b) {
+    auto cmp = [&](const Node& a,
+        const Node& b) {
         u_int32_t h_a = static_cast<u_int32_t>(manhattan_distance(std::get<0>(a)));
         u_int32_t h_b = static_cast<u_int32_t>(manhattan_distance(std::get<0>(b)));
         
@@ -433,16 +406,15 @@ bool Puzzle::solve_gbfs(const u_int64_t& start) {
         return std::get<2>(a) < std::get<2>(b);
     };
 
-    std::priority_queue<std::tuple<u_int64_t,u_int32_t,u_int64_t>, // estado, g, ordem
-                        std::vector<std::tuple<u_int64_t,u_int32_t,u_int64_t>>,
-                        decltype(cmp)> frontier(cmp);
+    std::priority_queue<Node, std::vector<Node>, decltype(cmp)> frontier(cmp);
 
-    std::tuple<u_int64_t,u_int32_t,u_int64_t> final_state;
+    Node final_state;
 
     auto start_time = std::chrono::high_resolution_clock::now();
 
     // nó inicial
     frontier.push({start, 0, insertion_order++});
+    visited.insert(start);
 
     if (start == goal) {
         auto end_time = std::chrono::high_resolution_clock::now();
@@ -460,8 +432,7 @@ bool Puzzle::solve_gbfs(const u_int64_t& start) {
         frontier.pop();
         n_expanded++;
         for (u_int64_t child : expand(current)) {
-            if (visited.find(child) != visited.end())
-                continue;
+            if (visited.find(child) != visited.end()) continue;
             visited.insert(child);
             if (child == goal) {
                 found_solution = true;
