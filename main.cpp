@@ -6,7 +6,6 @@ std::vector<std::vector<int>> read_states(int argc, char* argv[]) {
     first_vector.reserve(16);
     states.push_back(first_vector);
     int state_index = 0;
-    std::cout << "Puzzle state " << state_index + 1 << ": ";
     for(int i = 2; i < argc; i++) {
         std::string v = std::string(argv[i]);
         if(v.length() > 1 && (v[1] == ',' || v[2] == ',')){
@@ -16,14 +15,10 @@ std::vector<std::vector<int>> read_states(int argc, char* argv[]) {
             v = (v[1] == ',') ? v.substr(0,1) : v.substr(0,2);
             states[state_index].push_back(stoi(v));
             state_index++;
-            std::cout << v << std::endl;
-            std::cout << "Puzzle state " << state_index + 1 << ": ";
         } else {
-            std::cout << v << " ";
             states[state_index].push_back(stoi(v));
         }
     }
-    std::cout << std::endl;
     return states;
 }
 
@@ -40,7 +35,6 @@ int main(int argc, char* argv[]) {
         std::cerr << "[ERROR] -> " << usage_msg << std::endl;
         return 2;
     }
-    std::cout << "algorithm: " << algorithm << std::endl;
 
     int len_list_numbers = argc - 2;
     if(((len_list_numbers % 9) != 0 ) && (((len_list_numbers % 16) != 0))){
