@@ -1,6 +1,6 @@
 #include "bucket.hpp"
 
-void BucketQueue::push(const AstarNode& node) {
+void AstarBucketQueue::push(const AstarNode& node) {
     if (node.f < buckets.size()) {
         // Within each f-bucket, we maintain h-buckets
         if (buckets[node.f].empty()) {
@@ -11,7 +11,7 @@ void BucketQueue::push(const AstarNode& node) {
     }
 }
 
-AstarNode BucketQueue::pop() {
+AstarNode AstarBucketQueue::pop() {
     // Find minimum f-value
     while (min_f < buckets.size()) {
         if (!buckets[min_f].empty()) {
@@ -43,6 +43,6 @@ AstarNode BucketQueue::pop() {
     throw std::runtime_error("Queue is empty");
 }
 
-bool BucketQueue::empty() const {
+bool AstarBucketQueue::empty() const {
     return min_f >= MAX_F_VALUE;
 }

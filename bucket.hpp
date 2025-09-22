@@ -24,11 +24,11 @@ struct AstarNode {
         : state(s), g(g_val), h(h_val), f(g_val + h_val), parent(p), move(m) {}
 };
 
-struct BucketQueue {
+struct AstarBucketQueue {
     std::vector<std::vector<std::stack<AstarNode>>> buckets;
     int min_f;
     
-    BucketQueue() : buckets(MAX_F_VALUE), min_f(MAX_F_VALUE) {}
+    AstarBucketQueue() : buckets(MAX_F_VALUE), min_f(MAX_F_VALUE) {}
     void push(const AstarNode& node);
     AstarNode pop();
     bool empty() const;
