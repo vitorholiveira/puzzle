@@ -102,23 +102,30 @@ std::vector<u_int64_t> Puzzle::expand(const u_int64_t& state) const {
 }
 
 u_int16_t Puzzle::manhattan_distance(const u_int64_t& state) {
-    u_int16_t total = 0;
-    int pos;
-    for (pos = 0; pos < max_pos + 1; ++pos) {
-        int tile = (state >> (pos * TILE_BITS)) & 0xF;  // extract 4 bits
-        if (tile == 0) continue; // skip blank
-
-        int cur_row  = pos / grid_size;
-        int cur_col  = pos % grid_size;
-        int goal_row = tile / grid_size;
-        int goal_col = tile % grid_size;
-
-
-        total += static_cast<u_int16_t>(std::abs(cur_row - goal_row) + std::abs(cur_col - goal_col));
+    int h = 0;
+    for (int pos = 0; pos < grid_size * grid_size; pos++) {
+        int tile = (state >> (4 * pos)) & 0xF;
+        h += manhattan_table[tile][pos];
     }
-    return total;
+    return h;
 }
 
+void Puzzle::precompute_manhattan_table() {
+    manhattan_table.resize(grid_size * grid_size);
+    for (int tile = 0; tile < grid_size * grid_size; tile++) {
+        manhattan_table[tile].resize(grid_size * grid_size);
+        for (int pos = 0; pos < grid_size * grid_size; pos++) {
+            if (tile == 0) {
+                manhattan_table[tile][pos] = 0; // empty tile
+            } else {
+                int target_pos = tile; // tile i should be at position i
+                int curr_row = pos / grid_size, curr_col = pos % grid_size;
+                int target_row = target_pos / grid_size, target_col = target_pos % grid_size;
+                manhattan_table[tile][pos] = abs(curr_row - target_row) + abs(curr_col - target_col);
+            }
+        }
+    }
+}
 /*
     PUZZLE SOLVERS
 */
