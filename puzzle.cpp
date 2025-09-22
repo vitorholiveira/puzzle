@@ -271,30 +271,34 @@ bool Puzzle::solve_astar(const u_int64_t& start) {
     u_int32_t g_new;
 
     // Priority by f = g + h, then lower h, then LIFO
-    auto cmp = [&](const Node& a, const Node& b) {
-        auto f = [&](const Node& n) {
-            return std::get<1>(n) + std::get<3>(n);
-        };
-        u_int32_t f_a = f(a), f_b = f(b);
-        if (f_a != f_b) return f_a > f_b;                     // lower f first
-        u_int32_t h_a = std::get<3>(a);
-        u_int32_t h_b = std::get<3>(b);
-        if (h_a != h_b) return h_a > h_b;                     // then lower h
-        return std::get<2>(a) < std::get<2>(b);               // then newer first (LIFO)
-    };
+    // auto cmp = [&](const Node& a, const Node& b) {
+    //     auto f = [&](const Node& n) {
+    //         return std::get<1>(n) + std::get<3>(n);
+    //     };
+    //     u_int32_t f_a = f(a), f_b = f(b);
+    //     if (f_a != f_b) return f_a > f_b;                     // lower f first
+    //     u_int32_t h_a = std::get<3>(a);
+    //     u_int32_t h_b = std::get<3>(b);
+    //     if (h_a != h_b) return h_a > h_b;                     // then lower h
+    //     return std::get<2>(a) < std::get<2>(b);               // then newer first (LIFO)
+    // };
 
-    std::priority_queue<Node, std::vector<Node>, decltype(cmp)> frontier(cmp);
+    // BucketQueue<Node> frontier;
+    // std::priority_queue<Node, std::vector<Node>, decltype(cmp)> frontier(cmp);
 
+    BucketQueue<Node> frontier;
     auto start_time = std::chrono::high_resolution_clock::now();
 
     // initialize
-    frontier.push({start, 0, insertion_order++, (u_int32_t)manhattan_distance(start), 0});
+    u_int32_t start_h = (u_int32_t)manhattan_distance(start);
+    frontier.push({start, 0, insertion_order++, start_h, 0}, start_h, start_h);
     int heuristic_calls = 1;
     int heuristic_sum = manhattan_distance(start);
 
     while (!frontier.empty()) {
-        auto [current, g, order, h, parent] = frontier.top();
-        frontier.pop();
+        //auto [current, g, order, h, parent] = frontier.top();
+        //frontier.pop();
+        auto [current, g, order, h, parent] = frontier.pop();
 
         if (visited.count(current)) continue;
         visited.insert(current);
@@ -315,7 +319,8 @@ bool Puzzle::solve_astar(const u_int64_t& start) {
 
         for (const auto& child : expand(current)) {
             if (child != parent) {
-                frontier.push({child, g_new, insertion_order++, (u_int32_t)manhattan_distance(child), current});
+                u_int32_t h = (u_int32_t)manhattan_distance(child);
+                frontier.push({child, g_new, insertion_order++, h, current},g_new+h,h);
                 heuristic_calls++;
                 heuristic_sum += manhattan_distance(child);
             }

@@ -2,10 +2,10 @@
 
 # config
 MAX_MEM_GB=8
-MAX_TIME_SEC=120
+MAX_TIME_SEC=30
 ALGORITHM="-astar"
-INPUT="15puzzle_instances.txt"
-OUTPUT="astar15.csv"
+INPUT="instances/15puzzle_instances.txt"
+OUTPUT="results/astar15.csv"
 
 MAX_MEM_KB=$((MAX_MEM_GB * 1024 * 1024))
 > "$OUTPUT"
