@@ -1,5 +1,6 @@
 #include "puzzle.hpp"
 #include "bucket.hpp"
+#define MAX_INT 999999999
 
 // OK
 void Puzzle::solve(const std::string& algorithm) {
@@ -14,7 +15,7 @@ void Puzzle::solve(const std::string& algorithm) {
         } else if (algorithm == ASTAR) {
             solve_astar(start);
         } else if (algorithm == IDASTAR) {
-            //solve_idastar(start);
+            solve_idastar(start);
         } else if (algorithm == GBFS) {
             solve_gbfs(start);
         }
@@ -262,7 +263,6 @@ int Puzzle::recursive_dls(
     }
 }
 
-
 bool Puzzle::solve_astar(const u_int64_t& start) {
     using Node = std::tuple<u_int64_t, u_int32_t, u_int64_t, u_int32_t, u_int64_t>; // state, g, insertion order, h, parent
     std::unordered_set<u_int64_t> visited;                     // expanded states
@@ -385,76 +385,81 @@ bool Puzzle::solve_gbfs(const u_int64_t& start) {
     return false;
 }
 
-// bool Puzzle::solve_idastar(const u_int64_t& start) {
-//     struct Frame {
-//         u_int64_t state;
-//         int g;
-//         int h;
-//         size_t child_index;
-//         std::vector<u_int64_t> children;
-//     };
+bool Puzzle::solve_idastar(const u_int64_t& start) {
+    std::cout << "ID-A*" << std::endl;
+    u_int32_t n_expanded = 0;
+    
+    auto start_time = std::chrono::high_resolution_clock::now();
+    
+    int depth_limit = manhattan_distance(start);
+    int heuristic_calls = 1;
+    int heuristic_sum = manhattan_distance(start);
 
-//     auto start_time = std::chrono::high_resolution_clock::now();
+    while (true) {
+        u_int32_t solution_depth = 0;
 
-//     int bound = manhattan_distance(start);
+        int result = recursive_adls(start, 0, depth_limit, 0, n_expanded, solution_depth, heuristic_calls, heuristic_sum);
+        
+        if (result == -1) {
+            auto end_time = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+            double seconds = duration.count() / 1'000'000.0;
 
-//     while (true) {
-//         u_int32_t n_expanded = 0;
-//         double h_sum = 0.0;
-//         int min_cutoff = std::numeric_limits<int>::max();
+            SearchStatistics(n_expanded, solution_depth, seconds, double(heuristic_sum) / heuristic_calls, manhattan_distance(start));
+            return true;
+        }
+        
+        if (result == MAX_INT) {
+            break;
+        }
 
-//         std::stack<Frame> stack;
-//         stack.push({start, 0, manhattan_distance(start), 0, {}});
+        depth_limit = result;
+    }
+    
+    return false;
+}
 
-//         while (!stack.empty()) {
-//             Frame &node = stack.top();
-//             int f = node.g + node.h;
+int Puzzle::recursive_adls(
+    const u_int64_t& current_state, 
+    const u_int64_t& parent_state,
+    u_int32_t limit, 
+    u_int32_t current_depth,
+    u_int32_t& n_expanded,
+    u_int32_t& solution_depth,
+    int& heuristic_calls,
+    int& heuristic_sum) {
 
-//             // Cutoff check
-//             if (f > bound) {
-//                 if (f < min_cutoff) min_cutoff = f;
-//                 stack.pop();
-//                 continue;
-//             }
+    int heuristic = manhattan_distance(current_state);
+    heuristic_calls++;
+    heuristic_sum += heuristic;
 
-//             // Expansion counting (only first time we see the node)
-//             if (node.child_index == 0) {
-//                 n_expanded++;
-//                 h_sum += node.h;
-//             }
+    int f_cost = current_depth + heuristic;
+    
+    if (f_cost > limit) {
+        return f_cost;
+    }
+    
+    if (current_state == goal) {
+        solution_depth = current_depth;
+        return -1;
+    }
+    
+    n_expanded++;
+    int next_limit = MAX_INT;
+    
+    for (u_int64_t child : expand(current_state)) {
+        if (child == parent_state) {
+            continue;
+        }
 
-//             // Goal check
-//             if (node.state == goal) {
-//                 auto end_time = std::chrono::high_resolution_clock::now();
-//                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-//                 double seconds = duration.count() / 1'000'000.0;
-//                 double avg_h = (n_expanded > 0) ? (h_sum / n_expanded) : 0.0;
+        int result = recursive_adls(child, current_state, limit, current_depth + 1, n_expanded, solution_depth, heuristic_calls, heuristic_sum);
 
-//                 std::cout << n_expanded << "," << node.g << "," << seconds << "," << avg_h << "," << manhattan_distance(start) << std::endl;
-//                 return true;
-//             }
-
-//             // Expand children lazily
-//             if (node.children.empty()) {
-//                 node.children = expand(node.state);
-//             }
-
-//             if (node.child_index < node.children.size()) {
-//                 u_int64_t child = node.children[node.child_index++];
-//                 int h_child = manhattan_distance(child);
-//                 stack.push({child, node.g + 1, h_child, 0, {}});
-//             } else {
-//                 stack.pop();
-//             }
-//         }
-
-//         if (min_cutoff == std::numeric_limits<int>::max()) {
-//             return false;
-//         }
-
-//         bound = min_cutoff; // increase cutoff
-//     }
-// }
-
-
-
+        if (result == -1) {
+            return -1;
+        } else {
+            next_limit = std::min(next_limit, result);
+        }
+    }
+    
+    return next_limit;
+}

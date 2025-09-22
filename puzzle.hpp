@@ -74,6 +74,9 @@ public:
     void solve(const std::string& algorithm);
 
     std::vector<std::vector<int>> manhattan_table;
+
+
+
     int max_pos;
     int grid_size;
     u_int64_t goal;
@@ -91,6 +94,15 @@ public:
                       u_int32_t current_depth,
                       u_int32_t& n_expanded,
                       u_int32_t& solution_depth);
+    int recursive_adls(const u_int64_t& current_state, 
+                        const u_int64_t& parent_state,
+                        u_int32_t limit, 
+                        u_int32_t current_depth,
+                        u_int32_t& n_expanded,
+                        u_int32_t& solution_depth,
+                        int& heuristic_calls,
+                        int& heuristic_sum);
+
     void precompute_manhattan_table();
     u_int16_t manhattan_distance(const u_int64_t& state);
 
