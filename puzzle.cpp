@@ -420,8 +420,6 @@ bool Puzzle::solve_gbfs(const u_int64_t& start) {
 
     std::priority_queue<Node, std::vector<Node>, decltype(cmp)> frontier(cmp);
 
-    Node final_state;
-
     auto start_time = std::chrono::high_resolution_clock::now();
 
     // nó inicial
@@ -441,7 +439,6 @@ bool Puzzle::solve_gbfs(const u_int64_t& start) {
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
             double seconds = duration.count() / 1'000'000.0;
             u_int64_t h_start = static_cast<u_int64_t>(manhattan_distance(start));
-            auto g = std::get<1>(final_state);
             auto avg_h = float(heuristic_sum) / heuristic_calls;
             SearchStatistics(n_expanded, g, seconds, avg_h, h_start);
             return true;
