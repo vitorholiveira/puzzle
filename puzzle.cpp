@@ -272,7 +272,7 @@ bool Puzzle::solve_astar(const u_int64_t& start) {
     // Start timing
     auto start_time = std::chrono::high_resolution_clock::now();
     
-    AstarBucketQueue open_set;
+    BucketQueue<AstarNode> open_set;
     std::unordered_set<u_int64_t> closed_set;
     std::unordered_map<u_int64_t, AstarNode> all_nodes;
     

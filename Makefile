@@ -6,7 +6,7 @@ CXXFLAGS = -Wall -Wextra -std=c++23 -O3 -march=native
 TARGET = main
 
 # Source files
-SRCS = main.cpp puzzle.cpp bucket.cpp
+SRCS = main.cpp puzzle.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 # Default rule

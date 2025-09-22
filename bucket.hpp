@@ -1,37 +1,68 @@
-
 #ifndef BUCKETQUEUE_HPP
 #define BUCKETQUEUE_HPP
 
-#include <string>
 #include <vector>
-#include <queue>
-#include <chrono>
 #include <stack>
-#include <iostream>
+#include <stdexcept>
+#include <algorithm>
 
-static constexpr int MAX_F_VALUE = 200; // Adjust based on expected max f-value
+inline constexpr std::size_t MAX_F_VALUE = 200;
 
-struct AstarNode {
-    u_int64_t state;
-    int g;  // cost from start
-    int h;  // heuristic cost to goal
-    int f;  // g + h
-    u_int64_t parent;
-    int move; // move that led to this state
+template <typename T>
+struct BucketQueue {
+    std::vector<std::vector<std::stack<T>>> buckets;
+    std::size_t min_f;
 
-    AstarNode() : state(0), g(0), h(0), f(0), parent(0), move(0) {} // novo
-    AstarNode(u_int64_t s, int g_val, int h_val, u_int64_t p = 0, int m = -1) 
-        : state(s), g(g_val), h(h_val), f(g_val + h_val), parent(p), move(m) {}
-};
+    BucketQueue() : buckets(MAX_F_VALUE), min_f(MAX_F_VALUE) {}
 
-struct AstarBucketQueue {
-    std::vector<std::vector<std::stack<AstarNode>>> buckets;
-    int min_f;
-    
-    AstarBucketQueue() : buckets(MAX_F_VALUE), min_f(MAX_F_VALUE) {}
-    void push(const AstarNode& node);
-    AstarNode pop();
+    void push(const T& node);
+    T pop();
     bool empty() const;
 };
+
+template <typename T>
+void BucketQueue<T>::push(const T& node) {
+    if (node.f < buckets.size()) {
+        if (buckets[node.f].empty()) {
+            buckets[node.f].resize(MAX_F_VALUE);
+        }
+        buckets[node.f][node.h].push(node);
+        min_f = std::min(min_f, static_cast<std::size_t>(node.f));
+    }
+}
+
+template <typename T>
+T BucketQueue<T>::pop() {
+    while (min_f < buckets.size()) {
+        if (!buckets[min_f].empty()) {
+            for (std::size_t h = 0; h < buckets[min_f].size(); ++h) {
+                if (!buckets[min_f][h].empty()) {
+                    T node = buckets[min_f][h].top();
+                    buckets[min_f][h].pop();
+
+                    bool found_min = false;
+                    for (std::size_t f = min_f; f < buckets.size() && !found_min; ++f) {
+                        for (std::size_t h_check = 0; h_check < buckets[f].size(); ++h_check) {
+                            if (!buckets[f][h_check].empty()) {
+                                min_f = f;
+                                found_min = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!found_min) min_f = MAX_F_VALUE;
+                    return node;
+                }
+            }
+        }
+        ++min_f;
+    }
+    throw std::runtime_error("Queue is empty");
+}
+
+template <typename T>
+bool BucketQueue<T>::empty() const {
+    return min_f >= MAX_F_VALUE;
+}
 
 #endif // BUCKETQUEUE_HPP

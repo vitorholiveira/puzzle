@@ -27,6 +27,19 @@ constexpr int MOVE_DOWN_8 = -3;
 constexpr int MOVE_UP_15  = 4;
 constexpr int MOVE_DOWN_15 = -4;
 
+struct AstarNode {
+    u_int64_t state;
+    int g;  // cost from start
+    int h;  // heuristic cost to goal
+    int f;  // g + h
+    u_int64_t parent;
+    int move; // move that led to this state
+
+    AstarNode() : state(0), g(0), h(0), f(0), parent(0), move(0) {} // novo
+    AstarNode(u_int64_t s, int g_val, int h_val, u_int64_t p = 0, int m = -1) 
+        : state(s), g(g_val), h(h_val), f(g_val + h_val), parent(p), move(m) {}
+};
+
 struct SearchStatistics {
     u_int32_t expanded;
     u_int32_t solution_depth;
