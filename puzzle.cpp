@@ -145,10 +145,10 @@ bool Puzzle::solve_bfs(const u_int64_t& start) {
     if (start == goal) {
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-        double seconds = duration.count() / 1'000'000.0;
+        long double seconds = (long double)duration.count() / 1'000'000.0;
         int h_start = manhattan_distance(start);
 
-        std::cout << n_expanded << "," << visited[start] << "," << seconds << "," << 0 << "," << h_start << std::endl;
+        SearchStatistics(n_expanded, 0, seconds, 0, h_start);
         return true;
     }
 
@@ -169,10 +169,10 @@ bool Puzzle::solve_bfs(const u_int64_t& start) {
             if (child == goal) {
                 auto end_time = std::chrono::high_resolution_clock::now();
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-                double seconds = duration.count() / 1'000'000.0;
+                long double seconds = (long double) duration.count() / 1'000'000.0;
                 int h_start = manhattan_distance(start);
 
-                std::cout << n_expanded << "," << visited[child] << "," << seconds << "," << 0 << "," << h_start << std::endl;
+                SearchStatistics(n_expanded, visited[child], seconds, 0, h_start);
                 return true;
             }
 
@@ -192,7 +192,7 @@ bool Puzzle::solve_idfs(const u_int64_t& start) {
     if (start == goal) {
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-        double seconds = duration.count() / 1'000'000.0;
+        long double seconds = (long double)duration.count() / 1'000'000.0;
         
         SearchStatistics(n_expanded, 0, seconds, 0, manhattan_distance(start));
         return true;
@@ -206,7 +206,7 @@ bool Puzzle::solve_idfs(const u_int64_t& start) {
         if (result == 1) {
             auto end_time = std::chrono::high_resolution_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-            double seconds = duration.count() / 1'000'000.0;
+            long double seconds = (long double)duration.count() / 1'000'000.0;
             
             SearchStatistics(n_expanded, solution_depth, seconds, 0, manhattan_distance(start));
             return true;
@@ -305,9 +305,10 @@ bool Puzzle::solve_astar(const u_int64_t& start) {
 
         if (current == goal) {
             auto end_time = std::chrono::high_resolution_clock::now();
-            double seconds = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count() / 1'000'000.0;
+            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+            long double seconds = (long double)duration.count() / 1'000'000.0;
 
-            double avg_h = double(heuristic_sum) / double(heuristic_calls);
+            long double avg_h = (long double)heuristic_sum / (long double)heuristic_calls;
             u_int32_t h_start = static_cast<u_int32_t>(manhattan_distance(start));
 
             SearchStatistics(n_expanded, g, seconds, avg_h, h_start);
@@ -366,9 +367,9 @@ bool Puzzle::solve_gbfs(const u_int64_t& start) {
         if(current == goal) {
             auto end_time = std::chrono::high_resolution_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-            double seconds = duration.count() / 1'000'000.0;
+            long double seconds = (long double)duration.count() / 1'000'000.0;
             u_int64_t h_start = static_cast<u_int64_t>(manhattan_distance(start));
-            auto avg_h = float(heuristic_sum) / heuristic_calls;
+            long double avg_h = (long double)heuristic_sum / (long double)heuristic_calls;
             SearchStatistics(n_expanded, g, seconds, avg_h, h_start);
             return true;
         }
@@ -386,7 +387,6 @@ bool Puzzle::solve_gbfs(const u_int64_t& start) {
 }
 
 bool Puzzle::solve_idastar(const u_int64_t& start) {
-    std::cout << "ID-A*" << std::endl;
     u_int32_t n_expanded = 0;
     
     auto start_time = std::chrono::high_resolution_clock::now();
@@ -403,9 +403,10 @@ bool Puzzle::solve_idastar(const u_int64_t& start) {
         if (result == -1) {
             auto end_time = std::chrono::high_resolution_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-            double seconds = duration.count() / 1'000'000.0;
+            long double seconds = (long double)duration.count() / 1'000'000.0;
+            long double avg_h = (long double)heuristic_sum / (long double)heuristic_calls;
 
-            SearchStatistics(n_expanded, solution_depth, seconds, double(heuristic_sum) / heuristic_calls, manhattan_distance(start));
+            SearchStatistics(n_expanded, solution_depth, seconds, avg_h, manhattan_distance(start));
             return true;
         }
         

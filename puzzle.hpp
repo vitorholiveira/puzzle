@@ -11,6 +11,8 @@
 #include <functional>
 #include <chrono>
 #include <stack>
+#include <cmath>
+#include <iomanip>
 
 #define BFS "-bfs"
 #define IDFS "-idfs"
@@ -40,23 +42,25 @@ struct AstarNode {
         : state(s), g(g_val), h(h_val), f(g_val + h_val), parent(p), move(m) {}
 };
 
+
 struct SearchStatistics {
     u_int32_t expanded;
     u_int32_t solution_depth;
-    double elapsed_seconds;
-    double avg_heuristic;
+    long double elapsed_seconds;
+    long double avg_heuristic;
     u_int32_t start_heuristic;
-    SearchStatistics(u_int32_t expanded = 0, u_int32_t solution_depth = 0,  double elapsed_seconds = 0.0,
-                     double avg_heuristic = 0.0, u_int32_t start_heuristic = 0) :
+    SearchStatistics(u_int32_t expanded = 0, u_int32_t solution_depth = 0,  long double elapsed_seconds = 0.0,
+                     long double avg_heuristic = 0.0, u_int32_t start_heuristic = 0) :
                      expanded(expanded), solution_depth(solution_depth), elapsed_seconds(elapsed_seconds),
                      avg_heuristic(avg_heuristic), start_heuristic(start_heuristic) { print(); }
 
     void print() const {
-        std::cout << expanded << ","
-                  << solution_depth << ","
-                  << std::to_string(elapsed_seconds) << ","
-                  << std::to_string(avg_heuristic) << ","
-                  << start_heuristic << std::endl;
+        printf("%u,%u,%Lf,%Lf,%u\n",
+               expanded,
+               solution_depth,
+               elapsed_seconds,
+               std::round(avg_heuristic * 100000.0L) / 100000.0L,
+               start_heuristic);
     }
 };
 
