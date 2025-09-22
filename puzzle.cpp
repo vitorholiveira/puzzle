@@ -1,4 +1,5 @@
 #include "puzzle.hpp"
+#include "bucket.hpp"
 
 // OK
 void Puzzle::solve(const std::string& algorithm) {
@@ -263,77 +264,79 @@ int Puzzle::recursive_dls(
 
 
 bool Puzzle::solve_astar(const u_int64_t& start) {
-    using Node = std::tuple<u_int64_t, u_int32_t, u_int64_t, u_int32_t>; // state, g, insertion order, h
-    std::unordered_map<u_int64_t, u_int64_t> parent;          // for path reconstruction
-    std::unordered_map<u_int64_t, u_int32_t> g_score;         // best g found so far (discovered nodes)
-    std::unordered_set<u_int64_t> closed;                     // expanded states
-    u_int32_t n_expanded = 0;
-    u_int64_t insertion_order = 0;
-
-    // Priority by f = g + h, then lower h, then LIFO
-    auto cmp = [&](const Node& a, const Node& b) {
-        auto f = [&](const Node& n) {
-            return std::get<1>(n) + std::get<3>(n);
-        };
-        u_int32_t f_a = f(a), f_b = f(b);
-        if (f_a != f_b) return f_a > f_b;                     // lower f first
-        u_int32_t h_a = std::get<3>(a);
-        u_int32_t h_b = std::get<3>(b);
-        if (h_a != h_b) return h_a > h_b;                     // then lower h
-        return std::get<2>(a) < std::get<2>(b);               // then newer first (LIFO)
-    };
-
-    std::priority_queue<Node, std::vector<Node>, decltype(cmp)> frontier(cmp);
-
+    if (start == goal) {
+        SearchStatistics stats(0, 0, 0.0, 0.0, 0);
+        return true; // Already solved
+    }
+    
+    // Start timing
     auto start_time = std::chrono::high_resolution_clock::now();
-
-    // initialize
-    g_score[start] = 0;
-    parent[start]  = start;
-    frontier.push({start, 0, insertion_order++, (u_int32_t)manhattan_distance(start)});
-
-    while (!frontier.empty()) {
-        auto [current, g, order, h] = frontier.top();
-        frontier.pop();
-
-        if (closed.count(current)) continue;  // already expanded with best cost
-        closed.insert(current);
-
-        // Goal test when popping ensures optimality
-        if (current == goal) {
+    
+    BucketQueue open_set;
+    std::unordered_set<u_int64_t> closed_set;
+    std::unordered_map<u_int64_t, AstarNode> all_nodes;
+    
+    int start_h = manhattan_distance(start);
+    AstarNode start_node(start, 0, start_h);
+    
+    open_set.push(start_node);
+    all_nodes[start] = start_node;
+    
+    int nodes_expanded = 0;
+    int solution_depth = 0;
+    double total_heuristic = 0.0;
+    int heuristic_count = 0;
+    
+    while (!open_set.empty()) {
+        AstarNode current = open_set.pop();
+        
+        if (closed_set.count(current.state)) {
+            continue; // Already processed
+        }
+        
+        closed_set.insert(current.state);
+        nodes_expanded++;
+        
+        // Track heuristic values for average calculation
+        total_heuristic += current.h;
+        heuristic_count++;
+        
+        if (current.state == goal) {
+            // Calculate elapsed time
             auto end_time = std::chrono::high_resolution_clock::now();
-            double seconds = std::chrono::duration_cast<std::chrono::microseconds>(
-                                  end_time - start_time).count() / 1'000'000.0;
-
-            // average heuristic over all discovered nodes (keys in g_score)
-            double avg_h = 0.0;
-            if (!g_score.empty()) {
-                unsigned long long heuristic_sum = 0ULL;
-                for (const auto &p : g_score) {
-                    heuristic_sum += static_cast<u_int64_t>(manhattan_distance(p.first));
-                }
-                avg_h = double(heuristic_sum) / double(g_score.size());
-            }
-
-            u_int32_t h_start = static_cast<u_int32_t>(manhattan_distance(start));
-
-            SearchStatistics(n_expanded, g, seconds, avg_h, h_start);
+            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+            double elapsed_seconds = duration.count() / 1000000.0;
+            
+            // Get solution depth from the goal node
+            solution_depth = current.g;
+            
+            // Calculate average heuristic
+            double avg_heuristic = (heuristic_count > 0) ? total_heuristic / heuristic_count : 0.0;
+            
+            // Create and store statistics
+            SearchStatistics stats(nodes_expanded, solution_depth, elapsed_seconds, avg_heuristic, start_h);
+            
             return true;
         }
-
-        n_expanded++;
-
-        for (const auto& child : expand(current)) {
-            u_int32_t g_new = g + 1;
-            if (!g_score.count(child) || g_new < g_score[child]) {
-                g_score[child] = g_new;
-                parent[child]  = current;
-                frontier.push({child, g_new, insertion_order++, (u_int32_t)manhattan_distance(child)});
+        
+        for (const auto& child : expand(current.state)) {
+            if (closed_set.count(child)) {
+                continue;
+            }
+            
+            int new_g = current.g + 1;
+            int new_h = manhattan_distance(child);
+            
+            auto it = all_nodes.find(child);
+            if (it == all_nodes.end() || new_g < it->second.g) {
+                AstarNode successor_node(child, new_g, new_h, current.state);
+                open_set.push(successor_node);
+                all_nodes[child] = successor_node;
             }
         }
     }
-
-    return false; // no solution
+    
+    return false; // No solution found
 }
 
 

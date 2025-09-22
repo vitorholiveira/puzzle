@@ -5,7 +5,6 @@
 #include <iostream>
 #include <vector>
 #include <cstdint>
-#include <bitset>
 #include <unordered_set>
 #include <unordered_map>
 #include <queue>
@@ -61,7 +60,13 @@ public:
 
     void solve(const std::string& algorithm);
 
-private:
+    std::vector<std::vector<int>> manhattan_table;
+    int max_pos;
+    int grid_size;
+    u_int64_t goal;
+
+    std::vector<std::vector<int>> states;
+
     bool solve_bfs(const u_int64_t& start);
     bool solve_idfs(const u_int64_t& start);
     bool solve_astar(const u_int64_t& start);
@@ -74,13 +79,6 @@ private:
                       u_int32_t& n_expanded,
                       u_int32_t& solution_depth);
     void precompute_manhattan_table();
-
-    std::vector<std::vector<int>> manhattan_table;
-    int max_pos;
-    int grid_size;
-    u_int64_t goal;
-
-    std::vector<std::vector<int>> states;
     u_int16_t manhattan_distance(const u_int64_t& state);
 
     u_int64_t create_goal_state() const;

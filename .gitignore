@@ -20,6 +20,7 @@ main.exe
 
 # Logs
 *.log
+*.d
 
 # Editor/IDE files
 .vscode/

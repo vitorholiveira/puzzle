@@ -6,7 +6,7 @@ CXXFLAGS = -Wall -Wextra -std=c++23 -O3 -march=native
 TARGET = main
 
 # Source files
-SRCS = main.cpp puzzle.cpp
+SRCS = main.cpp puzzle.cpp bucket.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 # Default rule
@@ -17,7 +17,7 @@ $(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 # Compile .cpp into .o with dependency generation
-%.o: %.cpp puzzle.h
+%.o: %.cpp puzzle.hpp bucket.hpp
 	$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
 
 # Include dependencies
