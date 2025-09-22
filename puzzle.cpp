@@ -412,7 +412,7 @@ bool Puzzle::solve_astar(const u_int64_t& start) {
 // }
 
 bool Puzzle::solve_gbfs(const u_int64_t& start) {
-    using Node = std::tuple<u_int64_t, u_int32_t, u_int64_t>; // state, g, insertion order
+    using Node = std::tuple<u_int64_t, u_int32_t, u_int64_t, u_int64_t>; // state, g, insertion order, parent
     std::unordered_set<u_int64_t> visited;
     u_int32_t n_expanded = 0;
     u_int64_t insertion_order = 0; // controla o desempate LIFO
@@ -430,55 +430,39 @@ bool Puzzle::solve_gbfs(const u_int64_t& start) {
 
     std::priority_queue<Node, std::vector<Node>, decltype(cmp)> frontier(cmp);
 
-    Node final_state;
-
     auto start_time = std::chrono::high_resolution_clock::now();
 
     // nó inicial
-    frontier.push({start, 0, insertion_order++});
-    visited.insert(start);
+    int heuristic_calls = 1;
+    int heuristic_sum = manhattan_distance(start);
+    frontier.push({start, 0, insertion_order++, 0});
 
-    if (start == goal) {
-        auto end_time = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-        double seconds = duration.count() / 1'000'000.0;
-        int h_start = static_cast<int>(manhattan_distance(start));
-
-        SearchStatistics(n_expanded, 0, seconds, h_start, h_start);
-        return true;
-    }
-    bool found_solution = false;
-
-    while (!found_solution) {
-        auto [current, g, order] = frontier.top();
+    while (frontier.size() > 0) {
+        auto [current, g, order, parent] = frontier.top();
         frontier.pop();
+
+        if (visited.find(current) != visited.end()) continue;
+        visited.insert(current);
+
+        if(current == goal) {
+            auto end_time = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+            double seconds = duration.count() / 1'000'000.0;
+            u_int64_t h_start = static_cast<u_int64_t>(manhattan_distance(start));
+            auto avg_h = float(heuristic_sum) / heuristic_calls;
+            SearchStatistics(n_expanded, g, seconds, avg_h, h_start);
+            return true;
+        }
+
         n_expanded++;
         for (u_int64_t child : expand(current)) {
-            if (visited.find(child) != visited.end()) continue;
-            visited.insert(child);
-            if (child == goal) {
-                found_solution = true;
-                final_state = {child, g + 1, insertion_order++};
-            }
-            frontier.push({child, g + 1, insertion_order++});
+            if(child == parent) continue;
+            frontier.push({child, g + 1, insertion_order++, current});
+            heuristic_calls++;
+            heuristic_sum += manhattan_distance(child);
         }
     }
-
-    if(found_solution){
-        auto end_time = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-        double seconds = duration.count() / 1'000'000.0;
-        u_int64_t h_start = static_cast<u_int64_t>(manhattan_distance(start));
-        u_int64_t heuristic_sum = 0;
-        for (const auto &state : visited) {
-            heuristic_sum += static_cast<u_int64_t>(manhattan_distance(state));
-        }
-        auto g = std::get<1>(final_state);
-        auto avg_h = float(heuristic_sum) / visited.size();
-        SearchStatistics(n_expanded, g, seconds, avg_h, h_start);
-        return true;
-    }
-
+    std::cout << "No solution found." << std::endl;
     return false;
 }
 
