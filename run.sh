@@ -3,7 +3,7 @@
 # config
 MAX_MEM_GB=8
 MAX_TIME_SEC=30
-ALGORITHM="-astar"
+ALGORITHM="-astar" # {-bfs | -idfs | -astar | -idastar | -gbfs}
 INPUT="instances/15puzzle_instances.txt"
 OUTPUT="results/astar15.csv"
 

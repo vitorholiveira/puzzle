@@ -45,17 +45,7 @@ int main(int argc, char* argv[]) {
 
     
     std::vector<std::vector<int>> states = read_states(argc, argv);
-    int type = states[0].size() - 1;
-    if(type == 8) {
-        Puzzle puzzle(states);
-        puzzle.solve(algorithm);
-    } else if(type == 15) {
-        Puzzle puzzle(states);
-        if (algorithm == ASTAR) {
-            puzzle.solve(algorithm);
-        }
-    } else {
-        std::cerr << "[ERROR] -> " << "There is no implementation to solve the " << type << "-puzzle with the " << algorithm << " algorithm." << std::endl;
-    }
+    Puzzle puzzle(states);
+    puzzle.solve(algorithm);
     return 0;
 }
