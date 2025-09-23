@@ -1,3 +1,12 @@
+/*
+ * puzzle.hpp
+ *
+ * Este arquivo define a classe Puzzle e suas estruturas auxiliares,
+ * utilizadas para representar e manipular estados do puzzle
+ * (como 8-puzzle ou 15-puzzle). Ele fornece as funções, atributos e
+ * interfaces necessárias para implementação de algoritmos de busca,
+ * como A* e outras estratégias de solução.
+ */
 #ifndef PUZZLE_HPP
 #define PUZZLE_HPP
 

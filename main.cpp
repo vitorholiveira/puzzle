@@ -1,3 +1,12 @@
+/*
+ * main.cpp
+ *
+ * Ponto de entrada da aplicação. Este arquivo trata a leitura dos argumentos
+ * de linha de comando, interpreta o algoritmo de busca desejado (BFS, IDFS,
+ * A*, IDA* ou GBFS) e os estados do quebra-cabeça fornecidos pelo usuário,
+ * inicializando a classe Puzzle e executando a resolução com a estratégia
+ * escolhida.
+ */
 #include "puzzle.hpp"
 
 std::vector<std::vector<int>> read_states(int argc, char* argv[]) {

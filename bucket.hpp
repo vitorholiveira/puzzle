@@ -1,3 +1,12 @@
+/*
+ * bucket.hpp
+ *
+ * Define a estrutura de dados BucketQueue, uma fila de prioridade customizada
+ * baseada em "baldes" (buckets) para organizar elementos por custo/heurística.
+ * Essa implementação oferece inserções e remoções mais eficientes (próximas de O(1))
+ * em comparação com std::priority_queue, sendo especialmente útil em algoritmos
+ * de busca como A*.
+ */
 #ifndef BUCKETQUEUE_HPP
 #define BUCKETQUEUE_HPP
 
