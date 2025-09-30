@@ -1,13 +1,13 @@
 /*
  * puzzle.cpp
  *
- * Implementação da lógica principal para resolução de puzzles
- * usando diversos algoritmos de busca, como BFS, IDFS,
- * A*, Greedy Best-First Search (GBFS) e IDA*.
+ * Implementation of the main logic for puzzle solving
+ * using various search algorithms, such as BFS, IDFS,
+ * A*, Greedy Best-First Search (GBFS) and IDA*.
  *
- * Este arquivo também integra uma estrutura de dados personalizada, a BucketQueue,
- * utilizada para otimizar a fila de prioridade do algoritmo A*, reduzindo o custo
- * de inserção e remoção em comparação a std::priority_queue.
+ * This file also integrates a custom data structure, the BucketQueue,
+ * used to optimize the priority queue of the A* algorithm, reducing the cost
+ * of insertion and removal compared to std::priority_queue.
  */
 #include "puzzle.hpp"
 #include "bucket.hpp"

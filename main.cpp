@@ -1,11 +1,10 @@
 /*
  * main.cpp
  *
- * Ponto de entrada da aplicação. Este arquivo trata a leitura dos argumentos
- * de linha de comando, interpreta o algoritmo de busca desejado (BFS, IDFS,
- * A*, IDA* ou GBFS) e os estados do quebra-cabeça fornecidos pelo usuário,
- * inicializando a classe Puzzle e executando a resolução com a estratégia
- * escolhida.
+ * Application entry point. This file handles the reading of command-line
+ * arguments, interprets the desired search algorithm (BFS, IDFS, A*, IDA*,
+ * or GBFS), and the puzzle states provided by the user, initializing the
+ * Puzzle class and executing the solution with the chosen strategy.
  */
 #include "puzzle.hpp"
 
