@@ -27,6 +27,3 @@ $(TARGET): $(OBJS)
 clean:
 	rm -f $(OBJS) $(TARGET) $(OBJS:.o=.d)
 
-# Run program
-run: $(TARGET)
-	./$(TARGET)
